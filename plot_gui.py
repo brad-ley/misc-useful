@@ -15,6 +15,12 @@ import pandas as pd
 import numpy as np
 
 
+"""
+To do: add plot stacking option to compare multiple different plots
+Add button to export plot with Matplotlib and save to .png
+"""
+
+
 def is_number(s):
     try:
         float(s)
@@ -29,7 +35,7 @@ class PlotGUI(QWidget):
         self.file = r"Filename"
         self.plot_multiple = False
         self.plot_avg = False
-        self.start_time = "Default"
+        self.start_time = "Default (i.e. time[0])"
         self.initUI()
 
         self.show()
@@ -37,10 +43,6 @@ class PlotGUI(QWidget):
     def initUI(self):
 
         self.params = [
-            {'name': 'File', 'type': 'group', 'children': [
-                {'name': 'File:', 'type': 'str', 'value': self.file},
-                {'name': 'Choose File', 'type': 'action'}
-            ]},
             {'name': 'Plot options', 'type': 'group', 'children': [
                 {'name': 'Plot multiple', 'type': 'bool', 'value': self.plot_multiple, 'tip':
                     "This will plot multiple charts"},
@@ -50,11 +52,22 @@ class PlotGUI(QWidget):
                     "This will start the plot at time entered"}
         ]}]
 
+        self.filestuff = [{'name': 'File', 'type': 'group', 'children': [
+                {'name': 'Update plot', 'type': 'action'},
+                {'name': 'Choose file', 'type': 'action'},
+                {'name': 'File:', 'type': 'str', 'value': self.file}
+            ]}]
+
         self.p = Parameter.create(name='params', type='group', children=self.params)
+        self.f = Parameter.create(name='filestuff', type='group', children=self.filestuff)
 
         self.t = ParameterTree()
         self.t.setParameters(self.p, showTop=False)
-        self.t.setWindowTitle('Parameters')
+        self.t.setWindowTitle('Plot parameters')
+
+        self.tf = ParameterTree()
+        self.tf.setParameters(self.f, showTop=False)
+        self.tf.setWindowTitle('File parameters')
 
         Layout = QGridLayout()
 
@@ -65,45 +78,21 @@ class PlotGUI(QWidget):
 
         self.setLayout(Layout)
 
-        Layout.addWidget(self.t)  # deleted some shit here
-        Layout.addWidget(self.win)  #
+        Layout.addWidget(self.tf, 0, 1)  # deleted some shit here
+        Layout.addWidget(self.t, 0, 2)
+        Layout.addWidget(self.win, 1, 0, 1, 3)
 
-        self.p.param('File', 'Choose File').sigActivated.connect(self.makePlot)
-        self.p.param('Plot options', 'Plot multiple').sigValueChanged.connect(self.plotMult)
-        self.p.param('Plot options', 'Average').sigValueChanged.connect(self.plotAvg)
+        self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
+        self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
+        self.p.param('Plot options', 'Plot multiple').sigStateChanged.connect(self.plotMult)
+        self.p.param('Plot options', 'Average').sigStateChanged.connect(self.plotAvg)
+        self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
+
 
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()",
                                                 "", "Data Files (*.dat);;CSV (*.csv);;Python Files (*.py)")[0]
-        self.t.clear()
-
-        self.params = [
-            {'name': 'File', 'type': 'group', 'children': [
-                {'name': 'File:', 'type': 'str', 'value': self.file},
-                {'name': 'Choose File', 'type': 'action'}
-            ]},
-            {'name': 'Plot options', 'type': 'group', 'children': [
-                {'name': 'Plot multiple', 'type': 'bool', 'value': self.plot_multiple, 'tip':
-                    "This will plot multiple charts"},
-                {'name': 'Average', 'type': 'bool', 'value': self.plot_avg, 'tip':
-                    "This will average similarly named files"},
-                {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
-                    "This will start the plot at time entered"}
-            ]}]
-
-        self.p = Parameter.create(name='params', type='group', children=self.params)
-        self.t.setParameters(self.p, showTop=False)
-
-        self.p.param('File', 'Choose File').sigActivated.connect(self.makePlot)
-        self.p.param('Plot options', 'Plot multiple').sigValueChanged.connect(self.plotMult)
-        self.p.param('Plot options', 'Average').sigValueChanged.connect(self.plotAvg)
-        self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
-
-        if self.plot_multiple:
-            pass  # this will create additional plots in same window instead of re-plotting
-        else:
-            self.win.clear()
-        self.pl = self.win.addPlot()
+        self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
 
 
     def plotAvg(self):
@@ -111,6 +100,7 @@ class PlotGUI(QWidget):
             self.plot_avg = True
         else:
             self.plot_avg = False
+        self.p.param('Plot options', 'Average').setValue(self.plot_avg)
 
 
     def plotMult(self):
@@ -118,19 +108,22 @@ class PlotGUI(QWidget):
             self.plot_multiple = True
         else:
             self.plot_multiple = False
+        self.p.param('Plot options', 'Plot multiple').setValue(self.plot_multiple)
 
 
     def startTime(self):
-        print(self.start_time)
-        if is_number(self.start_time):
-            self.start_time = float(self.start_time)
-        else:
-            pass
-        print(self.start_time)
+        self.start_time = self.p.param('Plot options', 'Start time').value()
+        self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
 
     def makePlot(self):
-        self.chooseFile()
+
+        if self.plot_multiple:
+            pass  # this will create additional plots in same window instead of re-plotting
+        else:
+            self.win.clear()
+
+        self.pl = self.win.addPlot()
 
         try:
             fileopen = open(self.file, 'r')
@@ -152,8 +145,14 @@ class PlotGUI(QWidget):
                 self.data = np.array(pd.read_csv(self.file, sep=',', header=self.begin_line - 1, engine='python'))
 
                 if self.plot_avg:
-                    self.dataset = self.file.split('.')[-2][:-3]
-                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+
+                    if is_number(self.file.split('.')[-2][:-3]):
+                        self.dataset = self.file.split('.')[-2][:-3]
+                        filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+                    else:
+                        self.dataset = self.file.split('.')[-2]
+                        filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+
                     datalist = np.zeros(np.shape(self.data))
                     count = 0
                     for file in filelist:
@@ -166,13 +165,12 @@ class PlotGUI(QWidget):
 
                 if is_number(self.start_time):
                     start = float(self.start_time)
-                    print(np.where(self.data[:, 0] > start))
-                    self.data = self.data[np.where(self.data[:, 0] > start)]
+                    self.data = self.data[np.where(self.data[:, 0] >= start)]
 
                 self.plot_title = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
                 if self.plot_avg:
-                    self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + 'average'
+                    self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + ' average'
 
                 self.updatePlot()
 
@@ -201,7 +199,9 @@ class PlotGUI(QWidget):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         elif e.key() == QtCore.Qt.Key_Enter:
-            self.updatePlot()
+            self.makePlot()
+        elif e.key() == 16777220:  # enter for Mac, will need to find out enter for windows
+            self.makePlot()
         else:
             QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
 
