@@ -18,6 +18,7 @@ import numpy as np
 """
 To do: add plot stacking option to compare multiple different plots
 Add button to export plot with Matplotlib and save to .png
+Figure out what is up with the log and linear plotting
 """
 
 
@@ -33,8 +34,10 @@ class PlotGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.file = r"Filename"
+        self.prev_file = self.file
         self.plot_multiple = False
         self.plot_avg = False
+        self.plot_stack = False
         self.start_time = "Default (i.e. time[0])"
         self.initUI()
 
@@ -48,14 +51,17 @@ class PlotGUI(QWidget):
                     "This will plot multiple charts"},
                 {'name': 'Average', 'type': 'bool', 'value': self.plot_avg, 'tip':
                     "This will average similarly named files"},
+                {'name': 'Plot stack', 'type': 'bool', 'value': self.plot_stack, 'tip':
+                    "This will stack plots"},
                 {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
                     "This will start the plot at time entered"}
         ]}]
 
         self.filestuff = [{'name': 'File', 'type': 'group', 'children': [
-                {'name': 'Update plot', 'type': 'action'},
+                {'name': 'Update plots', 'type': 'action'},
                 {'name': 'Choose file', 'type': 'action'},
-                {'name': 'File:', 'type': 'str', 'value': self.file}
+                {'name': 'File:', 'type': 'str', 'value': self.file},
+                {'name': 'Clear plots', 'type': 'action'}
             ]}]
 
         self.p = Parameter.create(name='params', type='group', children=self.params)
@@ -83,9 +89,11 @@ class PlotGUI(QWidget):
         Layout.addWidget(self.win, 1, 0, 1, 3)
 
         self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
-        self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
+        self.f.param('File', 'Update plots').sigActivated.connect(self.makePlot)
+        self.f.param('File', 'Clear plots').sigActivated.connect(self.clearPlot)
         self.p.param('Plot options', 'Plot multiple').sigStateChanged.connect(self.plotMult)
         self.p.param('Plot options', 'Average').sigStateChanged.connect(self.plotAvg)
+        self.p.param('Plot options', 'Plot stack').sigStateChanged.connect(self.plotStack)
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
 
     def chooseFile(self):
@@ -97,12 +105,18 @@ class PlotGUI(QWidget):
         except:
             # QMessageBox.about(self, "Error", "No file chosen.")
             self.file = self.prev_file
+            if self.file == "Filename":
+                self.file = r"C:\Users\bdprice\Documents\Data\UV Vis\PR\20200309" \
+                            r"\E108Q 174 Monomer\M01_174_108_mono_activated_410nm_Scan000.dat"
             fileopen = open(self.file, 'r')
 
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
         self.lines = fileopen.readlines()
         fileopen.close()
 
+    def clearPlot(self):
+        self.win.clear()
+        delattr(self, 'pl')
 
     def plotAvg(self):
         if self.plot_avg is False:
@@ -120,6 +134,14 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Plot multiple').setValue(self.plot_multiple)
 
 
+    def plotStack(self):
+        if self.plot_stack is False:
+            self.plot_stack = True
+        else:
+            self.plot_stack = False
+        self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
+
+
     def startTime(self):
         if is_number(self.p.param('Plot options', 'Start time').value()):
             self.start_time = self.p.param('Plot options', 'Start time').value()
@@ -131,11 +153,18 @@ class PlotGUI(QWidget):
     def makePlot(self):
 
         if self.plot_multiple:
-            pass  # this will create additional plots in same window instead of re-plotting
+            self.pl = self.win.addPlot()  # this will create additional plots in same window instead of re-plotting
+            self.legend = self.pl.addLegend()
+        elif self.plot_stack:
+            if hasattr(self, 'pl'):
+                self.pl = self.win.addPlot()
+                print('no attr')
+            else:
+                pass
         else:
             self.win.clear()
-
-        self.pl = self.win.addPlot()
+            self.pl = self.win.addPlot()
+            self.legend = self.pl.addLegend()
 
         self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
 
@@ -174,10 +203,14 @@ class PlotGUI(QWidget):
                 start = float(self.start_time)
                 self.data = self.data[np.where(self.data[:, 0] >= start)]
 
-            self.plot_title = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
+            self.plot_name = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
-            if self.plot_avg:
-                self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + ' average'
+            if self.plot_stack:
+                self.plot_title = 'Magnitude'
+            elif self.plot_avg:
+                self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+            else:
+                self.plot_title = self.plot_name
 
             self.updatePlot()
 
@@ -188,14 +221,21 @@ class PlotGUI(QWidget):
 
     def updatePlot(self):
 
-        self.legend = self.pl.addLegend()
+        # while self.plot_stack:
+        #     for ii in range(1, len(self.data_types)):
+        #         self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii, name=self.data_types[ii].rstrip('\n'))
+
+        if self.plot_stack:
+            for ii in range(1, len(self.data_types)):
+                self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii, name=self.plot_name)
+        else:
+            for ii in range(1, len(self.data_types)):
+                self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii, name=self.data_types[ii].rstrip('\n'))
+
         self.pl.setTitle(self.plot_title)
         self.pl.enableAutoRange()
         self.pl.setLabel('left', 'Magnitude')
         self.pl.setLabel('bottom', self.data_types[0])
-
-        for ii in range(1, len(self.data_types)):
-            self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii, name=self.data_types[ii].rstrip('\n'))
 
         self.pl.show()
 
