@@ -3,7 +3,6 @@ This opens a gui and lets the user update with their chosen .dat
 """
 
 #!/usr/bin/env python3
-test
 
 from PyQt5.QtWidgets import *
 # from PyQt5.QtGui import *
@@ -132,6 +131,7 @@ class PlotGUI(QWidget):
 
     def makePlot(self):
         self.chooseFile()
+
         try:
             fileopen = open(self.file, 'r')
             lines = fileopen.readlines()
@@ -152,13 +152,14 @@ class PlotGUI(QWidget):
                 self.data = np.array(pd.read_csv(self.file, sep=',', header=self.begin_line - 1, engine='python'))
 
                 if self.plot_avg:
-                    self.dataset = '_'.join(self.file.split('_')[:-1])
-                    filelist = glob.glob(self.dataset + '_*' + self.file.split('.')[-1])
+                    self.dataset = self.file.split('.')[-2][:-3]
+                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
                     datalist = np.zeros(np.shape(self.data))
                     count = 0
                     for file in filelist:
-                        datalist = datalist + np.array(
-                            pd.read_csv(file, sep=',', header=self.begin_line - 1, engine='python'))
+                        datalist = datalist + np.array(pd.read_csv(file,
+                                                                   sep=',', header=self.begin_line - 1,
+                                                                   engine='python'))
                         count += 1
 
                     self.data = datalist / count
@@ -171,7 +172,7 @@ class PlotGUI(QWidget):
                 self.plot_title = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
                 if self.plot_avg:
-                    self.plot_title = ' '.join(self.plot_title.split(' ')[:-1])
+                    self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + 'average'
 
                 self.updatePlot()
 
