@@ -88,11 +88,20 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Average').sigStateChanged.connect(self.plotAvg)
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
 
-
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()",
                                                 "", "Data Files (*.dat);;CSV (*.csv);;Python Files (*.py)")[0]
+        try:
+            fileopen = open(self.file, 'r')
+            self.prev_file = self.file
+        except:
+            # QMessageBox.about(self, "Error", "No file chosen.")
+            self.file = self.prev_file
+            fileopen = open(self.file, 'r')
+
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
+        self.lines = fileopen.readlines()
+        fileopen.close()
 
 
     def plotAvg(self):
@@ -112,7 +121,10 @@ class PlotGUI(QWidget):
 
 
     def startTime(self):
-        self.start_time = self.p.param('Plot options', 'Start time').value()
+        if is_number(self.p.param('Plot options', 'Start time').value()):
+            self.start_time = self.p.param('Plot options', 'Start time').value()
+        else:
+            self.start_time = "Default (i.e. time[0])"
         self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
 
@@ -125,61 +137,53 @@ class PlotGUI(QWidget):
 
         self.pl = self.win.addPlot()
 
+        self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
+
+        for line in self.lines:
+            items = [is_number(ii) for ii in line.split(',')]
+            if not any(items):
+                pass
+            else:
+                self.begin_line = self.lines.index(line)
+                self.data_type = self.begin_line - 1
+                self.data_types = self.lines[self.data_type].split(',')
+                break
+
         try:
-            fileopen = open(self.file, 'r')
-            lines = fileopen.readlines()
-            fileopen.close()
-            self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
-            for line in lines:  # this part works only for VNA exported .csv; will need to update with try/except when
-                # different file generators are used
-                items = [is_number(ii) for ii in line.split(',')]
-                if not any(items):
-                    pass
+            self.data = np.array(pd.read_csv(self.file, sep=',', header=self.begin_line - 1, engine='python'))
+
+            if self.plot_avg:
+                if is_number(self.file.split('.')[-2][-3:]):
+                    self.dataset = self.file.split('.')[-2][:-3]
+                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
                 else:
-                    self.begin_line = lines.index(line)
-                    self.data_type = self.begin_line - 1
-                    self.data_types = lines[self.data_type].split(',')
-                    break
+                    self.dataset = self.file.split('.')[-2]
+                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
 
-            try:
-                self.data = np.array(pd.read_csv(self.file, sep=',', header=self.begin_line - 1, engine='python'))
+                datalist = np.zeros(np.shape(self.data))
+                count = 0
+                for file in filelist:
+                    datalist = datalist + np.array(pd.read_csv(file,
+                                                               sep=',', header=self.begin_line - 1,
+                                                               engine='python'))
+                    count += 1
 
-                if self.plot_avg:
+                self.data = datalist / count
 
-                    if is_number(self.file.split('.')[-2][:-3]):
-                        self.dataset = self.file.split('.')[-2][:-3]
-                        filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
-                    else:
-                        self.dataset = self.file.split('.')[-2]
-                        filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+            if is_number(self.start_time):
+                start = float(self.start_time)
+                self.data = self.data[np.where(self.data[:, 0] >= start)]
 
-                    datalist = np.zeros(np.shape(self.data))
-                    count = 0
-                    for file in filelist:
-                        datalist = datalist + np.array(pd.read_csv(file,
-                                                                   sep=',', header=self.begin_line - 1,
-                                                                   engine='python'))
-                        count += 1
+            self.plot_title = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
-                    self.data = datalist / count
+            if self.plot_avg:
+                self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + ' average'
 
-                if is_number(self.start_time):
-                    start = float(self.start_time)
-                    self.data = self.data[np.where(self.data[:, 0] >= start)]
-
-                self.plot_title = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
-
-                if self.plot_avg:
-                    self.plot_title = ' '.join(self.plot_title.split(' ')[:-1]) + ' average'
-
-                self.updatePlot()
-
-            except:
-
-                QMessageBox.about(self, "Error", "That file did not parse correctly.")
+            self.updatePlot()
 
         except:
-            QMessageBox.about(self, "Error", "No file chosen.")
+
+            QMessageBox.about(self, "Error", "That file did not parse correctly.")
 
 
     def updatePlot(self):
