@@ -253,8 +253,6 @@ class PlotGUI(QWidget):
 
                 self.data = datalist / count
 
-            print(self.data)
-
             if is_number(self.start_time):
                 start = float(self.start_time)
                 self.data = self.data[np.where(self.data[:, 0] >= start)]
@@ -303,8 +301,6 @@ class PlotGUI(QWidget):
                 self.end_line = self.lines.index(self.lines[-1])
 
         self.footerskip = len(self.lines) - self.end_line
-
-        print(self.data_types, self.begin_line, self.end_line, self.footerskip)
 
 
     def updatePlot(self):
