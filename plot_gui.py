@@ -222,32 +222,17 @@ class PlotGUI(QWidget):
 
             self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
 
-            for line in self.lines:
-                items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
-                if not all(items):
-                    pass
-                else:
-                    self.begin_line = self.lines.index(line)
-                    self.data_type = self.begin_line - 1
-                    self.data_types = self.lines[self.data_type].split(self.plot_delimiter)
-                    break
+            self.getLines()
 
             if self.begin_line == -1:
                 QMessageBox.about(self, "Error", "Delimiter not in file. Attempting to use csv.")
                 self.plot_delimiter = ','
 
-                for line in self.lines:
-                    items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
-                    if not any(items):
-                        pass
-                    else:
-                        self.begin_line = self.lines.index(line)
-                        self.data_type = self.begin_line - 1
-                        self.data_types = self.lines[self.data_type].split(self.plot_delimiter)
-                        break
+                self.getLines()
 
-            self.data = np.array(pd.read_csv(self.file, sep=self.plot_delimiter,
-                                         header=self.begin_line - 1, engine='python'))
+            self.data = np.array(pd.read_csv(self.file, sep=self.plot_delimiter, header=self.begin_line - 1,
+                                             skipfooter=self.footerskip, engine='python',
+                                             index_col=False))
 
             if self.plot_avg:
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -262,10 +247,13 @@ class PlotGUI(QWidget):
                 for file in filelist:
                     datalist = datalist + np.array(pd.read_csv(file,
                                                                sep=self.plot_delimiter, header=self.begin_line - 1,
-                                                               engine='python'))
+                                                               skipfooter=self.footerskip, engine='python',
+                                                               index_col=False))
                     count += 1
 
                 self.data = datalist / count
+
+            print(self.data)
 
             if is_number(self.start_time):
                 start = float(self.start_time)
@@ -290,6 +278,33 @@ class PlotGUI(QWidget):
                                              "delimiter was not specified.")
 
         self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
+
+
+    def getLines(self):
+        self.lines = [ii.rstrip('\n').rstrip(',') for ii in self.lines]
+
+        for line in self.lines:
+            items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+            if not all(items):
+                pass
+            else:
+                self.begin_line = self.lines.index(line)
+                self.data_type = self.begin_line - 1
+                self.data_types = [ii.rstrip('"').lstrip('"') for ii
+                                   in self.lines[self.data_type].split(self.plot_delimiter)]
+                break
+
+        for line in self.lines[self.begin_line:]:
+            items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+            if not all(items):
+                self.end_line = self.lines.index(line)
+                break
+            else:
+                self.end_line = self.lines.index(self.lines[-1])
+
+        self.footerskip = len(self.lines) - self.end_line
+
+        print(self.data_types, self.begin_line, self.end_line, self.footerskip)
 
 
     def updatePlot(self):
