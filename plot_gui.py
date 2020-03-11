@@ -13,6 +13,7 @@ import sys
 import glob
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 """
@@ -38,7 +39,9 @@ class PlotGUI(QWidget):
         self.plot_multiple = False
         self.plot_avg = False
         self.plot_stack = False
+        self.plot_normal = False
         self.plot_count = 0
+        self.plot_delimiter = ','
         self.start_time = "Default (time[0])"
         self.initUI()
 
@@ -52,17 +55,23 @@ class PlotGUI(QWidget):
                     "This will plot multiple charts"},
                 {'name': 'Average', 'type': 'bool', 'value': self.plot_avg, 'tip':
                     "This will average similarly named files"},
+                {'name': 'Normalize', 'type': 'bool', 'value': self.plot_normal, 'tip':
+                    "This will normalize data"},
                 {'name': 'Plot stack', 'type': 'bool', 'value': self.plot_stack, 'tip':
                     "This will stack plots"},
                 {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
-                    "This will start the plot at time entered"}
+                    "This will start the plot at time entered"},
+                {'name': 'Delimiter', 'type': 'str', 'value': self.plot_delimiter, 'tip':
+                    "Spacing in data file"}
         ]}]
 
         self.filestuff = [{'name': 'File', 'type': 'group', 'children': [
                 {'name': 'Update plot', 'type': 'action'},
-                {'name': 'Clear plots', 'type': 'action'},
+                {'name': 'Clear all', 'type': 'action'},
+                {'name': 'Clear last', 'type': 'action'},
                 {'name': 'Choose file', 'type': 'action'},
-                {'name': 'File:', 'type': 'str', 'value': self.file}
+                {'name': 'File:', 'type': 'str', 'value': self.file},
+                # {'name': 'Export last', 'type': 'action'}
             ]}]
 
         self.p = Parameter.create(name='params', type='group', children=self.params)
@@ -91,15 +100,21 @@ class PlotGUI(QWidget):
 
         self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
-        self.f.param('File', 'Clear plots').sigActivated.connect(self.clearPlot)
+        self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
+        # self.f.param('File', 'Export last').sigActivated.connect(self.exportPlot)
+        self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
         self.p.param('Plot options', 'Plot multiple').sigStateChanged.connect(self.plotMult)
         self.p.param('Plot options', 'Average').sigStateChanged.connect(self.plotAvg)
+        self.p.param('Plot options', 'Normalize').sigStateChanged.connect(self.plotNormal)
         self.p.param('Plot options', 'Plot stack').sigStateChanged.connect(self.plotStack)
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
+        self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
+
 
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()",
-                                                "", "Data Files (*.dat);;CSV (*.csv);;Python Files (*.py)")[0]
+                                                "", "Data Files (*.dat);;CSV (*.csv);;"
+                                                    "Text Files (*.txt);;Python Files (*.py)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
@@ -117,8 +132,22 @@ class PlotGUI(QWidget):
 
     def clearPlot(self):
         self.win.clear()
+        try:
+            delattr(self, 'pl')
+        except AttributeError:
+            QMessageBox.about(self, "Error", "No plot to clear.")
         self.plot_count = 0
-        delattr(self, 'pl')
+
+
+    def clearLast(self):
+        try:
+            if self.plot_multiple:
+                self.win.removeItem(self.pl)
+            else:
+                self.clearPlot()
+            self.plot_count = 0
+        except AttributeError:
+            QMessageBox.about(self, "Error", "No plot to clear.")
 
     def plotAvg(self):
         if self.plot_avg is False:
@@ -126,6 +155,15 @@ class PlotGUI(QWidget):
         else:
             self.plot_avg = False
         self.p.param('Plot options', 'Average').setValue(self.plot_avg)
+
+
+    def plotNormal(self):
+        if self.plot_normal is False:
+            self.plot_normal = True
+        else:
+            self.plot_normal = False
+
+        self.p.param('Plot options', 'Normalize').setValue(self.plot_normal)
 
 
     def plotMult(self):
@@ -152,6 +190,18 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
 
+    def setDelim(self):
+
+        self.plot_delimiter = self.p.param('Plot options', 'Delimiter').value()
+
+
+    # def exportPlot(self):
+    #     if not self.pl:
+    #         QMessageBox.about("Error", "No plot to export.")
+    #     else:
+    #         plt.plot()
+
+
     def makePlot(self):
 
         try:
@@ -173,16 +223,31 @@ class PlotGUI(QWidget):
             self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
 
             for line in self.lines:
-                items = [is_number(ii) for ii in line.split(',')]
-                if not any(items):
+                items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+                if not all(items):
                     pass
                 else:
                     self.begin_line = self.lines.index(line)
                     self.data_type = self.begin_line - 1
-                    self.data_types = self.lines[self.data_type].split(',')
+                    self.data_types = self.lines[self.data_type].split(self.plot_delimiter)
                     break
 
-            self.data = np.array(pd.read_csv(self.file, sep=',', header=self.begin_line - 1, engine='python'))
+            if self.begin_line == -1:
+                QMessageBox.about(self, "Error", "Delimiter not in file. Attempting to use csv.")
+                self.plot_delimiter = ','
+
+                for line in self.lines:
+                    items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+                    if not any(items):
+                        pass
+                    else:
+                        self.begin_line = self.lines.index(line)
+                        self.data_type = self.begin_line - 1
+                        self.data_types = self.lines[self.data_type].split(self.plot_delimiter)
+                        break
+
+            self.data = np.array(pd.read_csv(self.file, sep=self.plot_delimiter,
+                                         header=self.begin_line - 1, engine='python'))
 
             if self.plot_avg:
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -196,7 +261,7 @@ class PlotGUI(QWidget):
                 count = 0
                 for file in filelist:
                     datalist = datalist + np.array(pd.read_csv(file,
-                                                               sep=',', header=self.begin_line - 1,
+                                                               sep=self.plot_delimiter, header=self.begin_line - 1,
                                                                engine='python'))
                     count += 1
 
@@ -209,7 +274,6 @@ class PlotGUI(QWidget):
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
             if self.plot_stack:
-                self.plot_title = 'Magnitude'
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
             elif self.plot_avg:
                 self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
@@ -218,12 +282,24 @@ class PlotGUI(QWidget):
 
             self.updatePlot()
 
-        except:
-
+        except AttributeError:
             QMessageBox.about(self, "Error", "That file did not parse correctly.")
+
+        except ValueError:
+            QMessageBox.about(self, "Error", "This is not a comma-separated file and the correct "
+                                             "delimiter was not specified.")
+
+        self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
 
 
     def updatePlot(self):
+
+        if self.plot_normal:
+            for ii in range(1, len(self.data_types)):
+                if np.max(np.absolute(self.data[:, ii])) == 0:
+                    pass
+                else:
+                    self.data[:, ii] = np.absolute(self.data[:, ii]) / np.max(np.absolute(self.data[:, ii]))
 
         if self.plot_stack:
             for ii in range(1, len(self.data_types)):
@@ -235,7 +311,10 @@ class PlotGUI(QWidget):
             self.pl.setTitle(self.plot_title)
 
         self.pl.enableAutoRange()
-        self.pl.setLabel('left', 'Magnitude')
+        if self.plot_normal:
+            self.pl.setLabel('left', 'Magnitude (Normalized)')
+        else:
+            self.pl.setLabel('left', 'Magnitude (Normalized)')
         self.pl.setLabel('bottom', self.data_types[0])
 
         self.pl.show()
