@@ -312,9 +312,9 @@ class PlotGUI(QWidget):
 
         self.pl.enableAutoRange()
         if self.plot_normal:
-            self.pl.setLabel('left', 'Magnitude (Normalized)')
+            self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
-            self.pl.setLabel('left', 'Magnitude (Normalized)')
+            self.pl.setLabel('left', 'Magnitude')
         self.pl.setLabel('bottom', self.data_types[0])
 
         self.pl.show()
