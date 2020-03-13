@@ -1,9 +1,6 @@
 import os
 import glob
 
-print('Methods:\nreplace() -- replaces "print ..." with "print(...)"; can use no args or arg'
-      ' with string to be replaced\nInput target directory after running')
-
 
 def replace(*args):
     if len(args) != 0:
@@ -66,3 +63,9 @@ def replace(*args):
 
     print('Completed for directory %s.' % goodpath)
 
+
+if __name__ == "__main__":
+    replace()
+else:
+    print('Methods:\nreplace() -- replaces "print ..." with "print(...)"; can use no args or arg'
+          ' with string to be replaced\nInput target directory after running')

@@ -35,6 +35,7 @@ class PlotGUI(QWidget):
         self.plot_avg = False
         self.plot_stack = False
         self.plot_normal = False
+        # self.plot_name = False
         self.plot_count = 0
         self.plot_delimiter = ','
         self.start_time = "Default (time[0])"
@@ -56,6 +57,8 @@ class PlotGUI(QWidget):
                     "This will stack plots"},
                 {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
                     "This will start the plot at time entered"},
+                # {'name': 'Use filename as name', 'type': 'bool', 'value': self.plot_name, 'tip':
+                #     "Uses data name in file if false, uses plot title if true"},
                 {'name': 'Delimiter', 'type': 'str', 'value': self.plot_delimiter, 'tip':
                     "Spacing in data file"}
             ]}]
@@ -103,6 +106,7 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Normalize').sigStateChanged.connect(self.plotNormal)
         self.p.param('Plot options', 'Plot stack').sigStateChanged.connect(self.plotStack)
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
+        # self.p.param('Plot options', 'Use filename as name').sigValueChanged.connect(self.plotName)
         self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
 
     def chooseFile(self):
@@ -170,6 +174,13 @@ class PlotGUI(QWidget):
         else:
             self.plot_stack = False
         self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
+
+    # def plotName(self):
+    #     if self.plot_name is False:
+    #         self.plot_name = True
+    #     else:
+    #         self.plot_name = False
+    #     self.p.param('Plot options', 'Use filename as name').setValue(self.plot_name)
 
     def startTime(self):
         if is_number(self.p.param('Plot options', 'Start time').value()):
@@ -239,10 +250,17 @@ class PlotGUI(QWidget):
 
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
+            # if self.plot_avg or self.plot_name:
+            #     self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+            # elif self.plot_stack:
+            #     self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+            # else:
+            #     self.plot_title = self.plot_name
+
             if self.plot_stack:
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
             elif self.plot_avg:
-                self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+                self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
             else:
                 self.plot_title = self.plot_name
 
