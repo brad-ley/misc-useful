@@ -96,6 +96,8 @@ class PlotGUI(QWidget):
         Layout.addWidget(self.t, 0, 2)
         Layout.addWidget(self.win, 1, 0, 1, 3)
 
+        test change
+
         self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
