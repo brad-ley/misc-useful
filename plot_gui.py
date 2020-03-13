@@ -1,8 +1,7 @@
 """
 This opens a gui and lets the user update with their chosen .dat
 """
-
-#!/usr/bin/env python3
+#!/usr/bin/python
 
 from PyQt5.QtWidgets import *
 # from PyQt5.QtGui import *
@@ -13,13 +12,9 @@ import sys
 import glob
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 """
-To do: add plot stacking option to compare multiple different plots
-Add button to export plot with Matplotlib and save to .png
-Figure out what is up with the log and linear plotting
+Add button to export plot with Matplotlib and save to .png -- weird bug in export pyqtgraph for some reason
 """
 
 
@@ -63,16 +58,16 @@ class PlotGUI(QWidget):
                     "This will start the plot at time entered"},
                 {'name': 'Delimiter', 'type': 'str', 'value': self.plot_delimiter, 'tip':
                     "Spacing in data file"}
-        ]}]
+            ]}]
 
         self.filestuff = [{'name': 'File', 'type': 'group', 'children': [
-                {'name': 'Update plot', 'type': 'action'},
-                {'name': 'Clear all', 'type': 'action'},
-                {'name': 'Clear last', 'type': 'action'},
-                {'name': 'Choose file', 'type': 'action'},
-                {'name': 'File:', 'type': 'str', 'value': self.file},
-                # {'name': 'Export last', 'type': 'action'}
-            ]}]
+            {'name': 'Update plot', 'type': 'action'},
+            {'name': 'Clear all', 'type': 'action'},
+            {'name': 'Clear last', 'type': 'action'},
+            {'name': 'Choose file', 'type': 'action'},
+            {'name': 'File:', 'type': 'str', 'value': self.file},
+            # {'name': 'Export last', 'type': 'action'}
+        ]}]
 
         self.p = Parameter.create(name='params', type='group', children=self.params)
         self.f = Parameter.create(name='filestuff', type='group', children=self.filestuff)
@@ -110,7 +105,6 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
         self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
 
-
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()",
                                                 "", "Data Files (*.dat);;CSV (*.csv);;"
@@ -138,7 +132,6 @@ class PlotGUI(QWidget):
             QMessageBox.about(self, "Error", "No plot to clear.")
         self.plot_count = 0
 
-
     def clearLast(self):
         try:
             if self.plot_multiple:
@@ -156,7 +149,6 @@ class PlotGUI(QWidget):
             self.plot_avg = False
         self.p.param('Plot options', 'Average').setValue(self.plot_avg)
 
-
     def plotNormal(self):
         if self.plot_normal is False:
             self.plot_normal = True
@@ -165,14 +157,12 @@ class PlotGUI(QWidget):
 
         self.p.param('Plot options', 'Normalize').setValue(self.plot_normal)
 
-
     def plotMult(self):
         if self.plot_multiple is False:
             self.plot_multiple = True
         else:
             self.plot_multiple = False
         self.p.param('Plot options', 'Plot multiple').setValue(self.plot_multiple)
-
 
     def plotStack(self):
         if self.plot_stack is False:
@@ -181,7 +171,6 @@ class PlotGUI(QWidget):
             self.plot_stack = False
         self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
 
-
     def startTime(self):
         if is_number(self.p.param('Plot options', 'Start time').value()):
             self.start_time = self.p.param('Plot options', 'Start time').value()
@@ -189,18 +178,9 @@ class PlotGUI(QWidget):
             self.start_time = "Default (time[0])"
         self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
-
     def setDelim(self):
 
         self.plot_delimiter = self.p.param('Plot options', 'Delimiter').value()
-
-
-    # def exportPlot(self):
-    #     if not self.pl:
-    #         QMessageBox.about("Error", "No plot to export.")
-    #     else:
-    #         plt.plot()
-
 
     def makePlot(self):
 
@@ -220,7 +200,7 @@ class PlotGUI(QWidget):
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
 
-            self.begin_idx = self.begin_line = self.data_type = self.data_types = -1
+            self.begin_idx = self.begin_line = self.data_type = self.data_types = self.footerskip = -1
 
             self.getLines()
 
@@ -230,9 +210,9 @@ class PlotGUI(QWidget):
 
                 self.getLines()
 
-            self.data = np.array(pd.read_csv(self.file, sep=self.plot_delimiter, header=self.begin_line - 1,
-                                             skipfooter=self.footerskip, engine='python',
-                                             index_col=False))
+            self.data = pd.read_csv(self.file, sep=self.plot_delimiter, header=self.begin_line - 1,
+                                    skipfooter=self.footerskip, engine='python',
+                                    index_col=False).to_numpy()
 
             if self.plot_avg:
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -245,10 +225,10 @@ class PlotGUI(QWidget):
                 datalist = np.zeros(np.shape(self.data))
                 count = 0
                 for file in filelist:
-                    datalist = datalist + np.array(pd.read_csv(file,
-                                                               sep=self.plot_delimiter, header=self.begin_line - 1,
-                                                               skipfooter=self.footerskip, engine='python',
-                                                               index_col=False))
+                    datalist = datalist + pd.read_csv(file,
+                                                      sep=self.plot_delimiter, header=self.begin_line - 1,
+                                                      skipfooter=self.footerskip, engine='python',
+                                                      index_col=False).to_numpy()
                     count += 1
 
                 self.data = datalist / count
@@ -277,31 +257,31 @@ class PlotGUI(QWidget):
 
         self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
 
-
     def getLines(self):
-        self.lines = [ii.rstrip('\n').rstrip(',') for ii in self.lines]
 
-        for line in self.lines:
+        strippedlines = [ii.rstrip('\n').rstrip(',') for ii in self.lines]
+
+        for line in strippedlines:
             items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
             if not all(items):
                 pass
             else:
-                self.begin_line = self.lines.index(line)
+                self.begin_line = strippedlines.index(line)
                 self.data_type = self.begin_line - 1
                 self.data_types = [ii.rstrip('"').lstrip('"') for ii
-                                   in self.lines[self.data_type].split(self.plot_delimiter)]
+                                   in strippedlines[self.data_type].split(self.plot_delimiter)]
                 break
 
-        for line in self.lines[self.begin_line:]:
-            items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
-            if not all(items):
-                self.end_line = self.lines.index(line)
-                break
-            else:
-                self.end_line = self.lines.index(self.lines[-1])
+        if self.begin_line != -1:
+            for line in strippedlines[::-1]:
+                items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+                if all(items):
+                    self.end_line = strippedlines.index(line) + 1
+                    break
+                else:
+                    self.end_line = strippedlines.index(strippedlines[-1])
 
-        self.footerskip = len(self.lines) - self.end_line
-
+            self.footerskip = len(strippedlines) - self.end_line
 
     def updatePlot(self):
 
