@@ -308,7 +308,7 @@ class PlotGUI(QWidget):
                 if np.max(np.absolute(self.data[:, ii])) == 0:
                     pass
                 else:
-                    self.data[:, ii] = np.absolute(self.data[:, ii]) / np.max(np.absolute(self.data[:, ii]))
+                    self.data[:, ii] = self.data[:, ii] / np.max(np.absolute(self.data[:, ii]))
 
         if self.plot_stack:
             for ii in range(1, len(self.data_types)):
