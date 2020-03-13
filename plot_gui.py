@@ -240,7 +240,7 @@ class PlotGUI(QWidget):
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
 
             if self.plot_stack:
-                self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+                self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
             elif self.plot_avg:
                 self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
             else:
