@@ -12,6 +12,7 @@ import sys
 import glob
 import pandas as pd
 import numpy as np
+# import plt_fig
 
 """
 Add button to export plot with Matplotlib and save to .png -- weird bug in export pyqtgraph for some reason
@@ -39,6 +40,9 @@ class PlotGUI(QWidget):
         self.plot_count = 0
         self.plot_delimiter = ','
         self.start_time = "Default (time[0])"
+        self.plot_axes = 'xlin, ylin'
+        self.possible_axis = ["xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"]
+        self.real_axes = False
         self.initUI()
 
         self.show()
@@ -57,6 +61,8 @@ class PlotGUI(QWidget):
                     "This will stack plots"},
                 {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
                     "This will start the plot at time entered"},
+                {'name': 'Axis scale', 'type': 'str', 'value': self.plot_axes, 'tip':
+                    "xlin, ylin, xlog, ylog are all available"},
                 # {'name': 'Use filename as name', 'type': 'bool', 'value': self.plot_name, 'tip':
                 #     "Uses data name in file if false, uses plot title if true"},
                 {'name': 'Delimiter', 'type': 'str', 'value': self.plot_delimiter, 'tip':
@@ -69,6 +75,7 @@ class PlotGUI(QWidget):
             {'name': 'Clear last', 'type': 'action'},
             {'name': 'Choose file', 'type': 'action'},
             {'name': 'File:', 'type': 'str', 'value': self.file},
+            # {'name': 'Matplotlib create', 'type': 'action'},
             # {'name': 'Export last', 'type': 'action'}
         ]}]
 
@@ -99,6 +106,7 @@ class PlotGUI(QWidget):
         self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
+        # self.f.param('File', 'Matplotlib create').sigActivated.connect(self.matPlot)
         # self.f.param('File', 'Export last').sigActivated.connect(self.exportPlot)
         self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
         self.p.param('Plot options', 'Plot multiple').sigStateChanged.connect(self.plotMult)
@@ -106,6 +114,7 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Normalize').sigStateChanged.connect(self.plotNormal)
         self.p.param('Plot options', 'Plot stack').sigStateChanged.connect(self.plotStack)
         self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
+        self.p.param('Plot options', 'Axis scale').sigValueChanged.connect(self.axesSet)
         # self.p.param('Plot options', 'Use filename as name').sigValueChanged.connect(self.plotName)
         self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
 
@@ -135,6 +144,9 @@ class PlotGUI(QWidget):
         except AttributeError:
             QMessageBox.about(self, "Error", "No plot to clear.")
         self.plot_count = 0
+
+    # def matPlot(self):
+    #     plt_fig.main()
 
     def clearLast(self):
         try:
@@ -192,6 +204,26 @@ class PlotGUI(QWidget):
     def setDelim(self):
 
         self.plot_delimiter = self.p.param('Plot options', 'Delimiter').value()
+
+
+    def axesSet(self):
+
+        if self.p.param('Plot options', 'Axis scale').value() in self.possible_axis:
+            self.each_axis = [ii.rstrip(' ').lstrip(' ') for ii in self.p.param('Plot options', 'Axis scale').value(
+
+            ).split(
+                ",")]
+
+            self.real_axes = True
+
+        else:
+            self.each_axis = ["xlin", "ylin"]
+            self.plot_axes = 'xlin, ylin'
+
+            self.real_axes = False
+
+            self.p.param('Plot options', 'Axis scale').setValue(self.plot_axes)
+
 
     def makePlot(self):
 
@@ -259,8 +291,10 @@ class PlotGUI(QWidget):
 
             if self.plot_stack:
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
+                if self.plot_avg:
+                    self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + 'average'
             elif self.plot_avg:
-                self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+                self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
             else:
                 self.plot_title = self.plot_name
 
@@ -303,12 +337,33 @@ class PlotGUI(QWidget):
 
     def updatePlot(self):
 
+        if self.real_axes:
+
+            if self.each_axis == ["xlog", "ylog"]:
+                self.pl.setLogMode(True, True)
+                self.data = self.data[np.where(self.data[:, 0] > 0)]
+                for ii in range(1, len(self.data_types)):
+                    self.data[:, ii] = np.abs(self.data[:, ii])
+            elif self.each_axis[0] == "xlog":
+                self.pl.setLogMode(True, False)
+                self.data = self.data[np.where(self.data[:, 0] > 0)]
+            elif self.each_axis[1] == "ylog":
+                self.pl.setLabel(False, True)
+                for ii in range(1, len(self.data_types)):
+                    self.data[:, ii] = np.abs(self.data[:, ii])
+            else:
+                self.pl.setLogMode(False, False)
+
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
                 if np.max(np.absolute(self.data[:, ii])) == 0:
                     pass
                 else:
                     self.data[:, ii] = self.data[:, ii] / np.max(np.absolute(self.data[:, ii]))
+
+            self.pl.setLabel('left', 'Magnitude (normalized)')
+        else:
+            self.pl.setLabel('left', 'Magnitude')
 
         if self.plot_stack:
             for ii in range(1, len(self.data_types)):
@@ -320,10 +375,7 @@ class PlotGUI(QWidget):
             self.pl.setTitle(self.plot_title)
 
         self.pl.enableAutoRange()
-        if self.plot_normal:
-            self.pl.setLabel('left', 'Magnitude (normalized)')
-        else:
-            self.pl.setLabel('left', 'Magnitude')
+
         self.pl.setLabel('bottom', self.data_types[0])
 
         self.pl.show()
