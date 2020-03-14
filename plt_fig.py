@@ -8,11 +8,12 @@ def makePlot(count):
     file = eg.fileopenbox("Choose file")
 
     try:
-        data = np.array(pd.read_csv(file, engine='python',
-                                    index_col=False))
-        title, yax, xax, logs, names = eg.multenterbox(title="Plot titles", fields=["Title", "y-axis", "Log? (type 'x, y, "
-                                                                                                 "or xy')",
-                                                                              "Plot names"])
+        data = pd.read_csv(file, engine='python',
+                           index_col=False).to_numpy()
+        title, yax, xax, logs, names = eg.multenterbox(title="Plot titles",
+                                                       fields=["Title", "y-axis", "Log? (type 'x, y, "
+                                                                                  "or xy')",
+                                                               "Plot names"])
 
         nameslist = names.split(", ")
         plt.figure(count)
@@ -30,7 +31,7 @@ def makePlot(count):
         plt.savefig(file[:-4] + ".png")
         plt.show()
 
-    except(TypeError, AttributeError):
+    except(TypeError, AttributeError, ValueError):
         pass
 
 
