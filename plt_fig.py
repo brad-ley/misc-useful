@@ -3,15 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import easygui as eg
 
-def makePlot(count):
 
+def makePlot(count):
     file = eg.fileopenbox("Choose file")
 
     try:
         data = np.array(pd.read_csv(file, engine='python',
                                     index_col=False))
-        title, yax, xax, names = eg.multenterbox(title="Plot titles", fields=["Title", "y-axis", "x-axis",
+        title, yax, xax, logs, names = eg.multenterbox(title="Plot titles", fields=["Title", "y-axis", "Log? (type 'x, y, "
+                                                                                                 "or xy')",
                                                                               "Plot names"])
+
         nameslist = names.split(", ")
         plt.figure(count)
 
@@ -20,6 +22,10 @@ def makePlot(count):
         plt.legend()
         plt.xlabel(xax)
         plt.ylabel(yax)
+        if x in logs:
+            plt.xscale('log')
+        if y in logs:
+            plt.yscale('log')
         plt.title(title)
         plt.savefig(file[:-4] + ".png")
         plt.show()
@@ -31,18 +37,17 @@ def makePlot(count):
 def keepRunning():
     msg = "Do you want to run again?"
     if eg.ccbox(msg):  # show a Continue/Cancel dialog
-        return True  # user chose Continue
+        pass  # user chose Continue
     else:  # user chose Cancel
         sys.exit(0)
 
 
 def main():
-    cont = True
     count = 0
-    while cont == True:
+    while True:
         makePlot(count)
         count += 1
-        cont = keepRunning()
+        keepRunning()
 
 
 if __name__ == "__main__":
