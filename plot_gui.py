@@ -148,7 +148,7 @@ class PlotGUI(QWidget):
     # def matPlot(self):
     #     plt_fig.main()
 
-    def clearLast(self):
+    def clearLast(self):  # known bug where clear last clears all if plot multiple has been deselected
         try:
             if self.plot_multiple:
                 self.win.removeItem(self.pl)
