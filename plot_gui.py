@@ -342,17 +342,17 @@ class PlotGUI(QWidget):
         if self.real_axes:
 
             if self.each_axis == ["xlog", "ylog"]:
-                self.pl.setLogMode(True, True)
-                xset = True
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
+                self.pl.setLogMode(True, True)
+                xset = True
             elif self.each_axis[0] == "xlog":
                 self.pl.setLogMode(True, False)
                 xset = True
             elif self.each_axis[1] == "ylog":
-                self.pl.setLogMode(False, True)
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
+                self.pl.setLogMode(False, True)
             else:
                 self.pl.setLogMode(False, False)
 
