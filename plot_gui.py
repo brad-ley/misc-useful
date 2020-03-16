@@ -348,7 +348,7 @@ class PlotGUI(QWidget):
                 self.pl.setLogMode(True, False)
                 self.data = self.data[np.where(self.data[:, 0] > 0)]
             elif self.each_axis[1] == "ylog":
-                self.pl.setLabel(False, True)
+                self.pl.setLogMode(False, True)
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
             else:
