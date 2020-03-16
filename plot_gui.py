@@ -119,7 +119,7 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
 
     def chooseFile(self):
-        self.file = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()",
+        self.file = QFileDialog.getOpenFileName(self, "Plot file",
                                                 "", "Data Files (*.dat);;CSV (*.csv);;"
                                                     "Text Files (*.txt);;Python Files (*.py)")[0]
         try:
