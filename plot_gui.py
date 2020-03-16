@@ -337,22 +337,40 @@ class PlotGUI(QWidget):
 
     def updatePlot(self):
 
+        xset = False
+
         if self.real_axes:
 
             if self.each_axis == ["xlog", "ylog"]:
                 self.pl.setLogMode(True, True)
-                self.data = self.data[np.where(self.data[:, 0] > 0)]
+                xset = True
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
             elif self.each_axis[0] == "xlog":
                 self.pl.setLogMode(True, False)
-                self.data = self.data[np.where(self.data[:, 0] > 0)]
+                xset = True
             elif self.each_axis[1] == "ylog":
                 self.pl.setLogMode(False, True)
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
             else:
                 self.pl.setLogMode(False, False)
+
+            if xset == True:
+
+                try:
+                    start = float(self.start_time)
+                except ValueError:
+                    start = -1
+
+                if start > 0:  # should catch string start times as well as negatives
+                    self.data = self.data[np.where(self.data[:, 0] > start)]
+                    self.start_time = self.data[np.where(self.data[:, 0] > start)][0][0]
+                else:
+                    self.data = self.data[np.where(self.data[:, 0] > 0)]
+                    self.start_time = self.data[np.where(self.data[:, 0] > 0)][0][0]
+
+                self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
