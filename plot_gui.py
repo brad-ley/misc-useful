@@ -370,7 +370,7 @@ class PlotGUI(QWidget):
                     self.data = self.data[np.where(self.data[:, 0] > 0)]
                     self.start_time = self.data[np.where(self.data[:, 0] > 0)][0][0]
 
-                self.p.param('Plot options', 'Start time').setValue(self.start_time)
+                self.p.param('Plot options', 'Start time').setValue(np.round(self.start_time, 8))
 
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
