@@ -157,6 +157,9 @@ class PlotGUI(QWidget):
             self.plot_count = 0
         except AttributeError:
             QMessageBox.about(self, "Error", "No plot to clear.")
+        except:
+            QMessageBox.about(self, "Error", "Clear last can only clear the most recent plot. "
+                                             "There is not record of 'last' plot beside the one just cleared.")
 
     def plotAvg(self):
         if self.plot_avg is False:
