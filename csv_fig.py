@@ -59,4 +59,4 @@ def main():
 if __name__ == "__main__":
     main()
 else:
-    print("plt_fig.main()")
+    print("csv_fig.main()")
