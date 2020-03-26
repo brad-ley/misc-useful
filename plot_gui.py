@@ -3,17 +3,17 @@ This opens a gui and lets the user update with their chosen .dat
 """
 #!/usr/bin/python
 
-from PyQt5.QtWidgets import *
-# from PyQt5.QtGui import *
+import glob
+import sys
+
+import numpy as np
+import pandas as pd
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from pyqtgraph import *
 from pyqtgraph.parametertree import *
-import sys
-import glob
-import pandas as pd
-import numpy as np
-# import plt_fig
 
+# import plt_fig
 """
 Add button to export plot with Matplotlib and save to .png -- weird bug in export pyqtgraph for some reason
 """
@@ -22,6 +22,7 @@ Add button to export plot with Matplotlib and save to .png -- weird bug in expor
 def is_number(s):
     try:
         float(s)
+
         return True
     except ValueError:
         return False
@@ -41,7 +42,9 @@ class PlotGUI(QWidget):
         self.plot_delimiter = ','
         self.start_time = "Default (time[0])"
         self.plot_axes = 'xlin, ylin'
-        self.possible_axis = ["xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"]
+        self.possible_axis = [
+            "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
+        ]
         self.real_axes = False
         self.initUI()
 
@@ -49,38 +52,97 @@ class PlotGUI(QWidget):
 
     def initUI(self):
 
-        self.params = [
-            {'name': 'Plot options', 'type': 'group', 'children': [
-                {'name': 'Plot multiple', 'type': 'bool', 'value': self.plot_multiple, 'tip':
-                    "This will plot multiple charts"},
-                {'name': 'Average', 'type': 'bool', 'value': self.plot_avg, 'tip':
-                    "This will average similarly named files"},
-                {'name': 'Normalize', 'type': 'bool', 'value': self.plot_normal, 'tip':
-                    "This will normalize data"},
-                {'name': 'Plot stack', 'type': 'bool', 'value': self.plot_stack, 'tip':
-                    "This will stack plots"},
-                {'name': 'Start time', 'type': 'str', 'value': self.start_time, 'tip':
-                    "This will start the plot at time entered"},
-                {'name': 'Axis scale', 'type': 'str', 'value': self.plot_axes, 'tip':
-                    "xlin, ylin, xlog, ylog are all available"},
+        self.params = [{
+            'name':
+            'Plot options',
+            'type':
+            'group',
+            'children': [
+                {
+                    'name': 'Plot multiple',
+                    'type': 'bool',
+                    'value': self.plot_multiple,
+                    'tip': "This will plot multiple charts"
+                },
+                {
+                    'name': 'Average',
+                    'type': 'bool',
+                    'value': self.plot_avg,
+                    'tip': "This will average similarly named files"
+                },
+                {
+                    'name': 'Normalize',
+                    'type': 'bool',
+                    'value': self.plot_normal,
+                    'tip': "This will normalize data"
+                },
+                {
+                    'name': 'Plot stack',
+                    'type': 'bool',
+                    'value': self.plot_stack,
+                    'tip': "This will stack plots"
+                },
+                {
+                    'name': 'Start time',
+                    'type': 'str',
+                    'value': self.start_time,
+                    'tip': "This will start the plot at time entered"
+                },
+                {
+                    'name': 'Axis scale',
+                    'type': 'str',
+                    'value': self.plot_axes,
+                    'tip': "xlin, ylin, xlog, ylog are all available"
+                },
                 # {'name': 'Use filename as name', 'type': 'bool', 'value': self.plot_name, 'tip':
                 #     "Uses data name in file if false, uses plot title if true"},
-                {'name': 'Delimiter', 'type': 'str', 'value': self.plot_delimiter, 'tip':
-                    "Spacing in data file"}
-            ]}]
+                {
+                    'name': 'Delimiter',
+                    'type': 'str',
+                    'value': self.plot_delimiter,
+                    'tip': "Spacing in data file"
+                }
+            ]
+        }]
 
-        self.filestuff = [{'name': 'File', 'type': 'group', 'children': [
-            {'name': 'Update plot', 'type': 'action'},
-            {'name': 'Clear all', 'type': 'action'},
-            {'name': 'Clear last', 'type': 'action'},
-            {'name': 'Choose file', 'type': 'action'},
-            {'name': 'File:', 'type': 'str', 'value': self.file},
-            # {'name': 'Matplotlib create', 'type': 'action'},
-            # {'name': 'Export last', 'type': 'action'}
-        ]}]
+        self.filestuff = [{
+            'name':
+            'File',
+            'type':
+            'group',
+            'children': [
+                {
+                    'name': 'Update plot',
+                    'type': 'action'
+                },
+                {
+                    'name': 'Clear all',
+                    'type': 'action'
+                },
+                {
+                    'name': 'Clear last',
+                    'type': 'action'
+                },
+                {
+                    'name': 'Choose file',
+                    'type': 'action'
+                },
+                {
+                    'name': 'File:',
+                    'type': 'str',
+                    'value': self.file
+                },
+                # {'name': 'Matplotlib create', 'type': 'action'},
+                # {'name': 'Export last', 'type': 'action'}
+            ]
+        }]
 
-        self.p = Parameter.create(name='params', type='group', children=self.params)
-        self.f = Parameter.create(name='filestuff', type='group', children=self.filestuff)
+        self.p = Parameter.create(name='params',
+                                  type='group',
+                                  children=self.params)
+        self.f = Parameter.create(name='filestuff',
+                                  type='group',
+                                  children=self.filestuff)
 
         self.t = ParameterTree()
         self.t.setParameters(self.p, showTop=False)
@@ -103,31 +165,40 @@ class PlotGUI(QWidget):
         Layout.addWidget(self.t, 0, 2)
         Layout.addWidget(self.win, 1, 0, 1, 3)
 
-        self.f.param('File', 'Choose file').sigActivated.connect(self.chooseFile)
+        self.f.param('File',
+                     'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
         # self.f.param('File', 'Matplotlib create').sigActivated.connect(self.matPlot)
         # self.f.param('File', 'Export last').sigActivated.connect(self.exportPlot)
         self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
-        self.p.param('Plot options', 'Plot multiple').sigStateChanged.connect(self.plotMult)
-        self.p.param('Plot options', 'Average').sigStateChanged.connect(self.plotAvg)
-        self.p.param('Plot options', 'Normalize').sigStateChanged.connect(self.plotNormal)
-        self.p.param('Plot options', 'Plot stack').sigStateChanged.connect(self.plotStack)
-        self.p.param('Plot options', 'Start time').sigValueChanged.connect(self.startTime)
-        self.p.param('Plot options', 'Axis scale').sigValueChanged.connect(self.axesSet)
+        self.p.param('Plot options',
+                     'Plot multiple').sigStateChanged.connect(self.plotMult)
+        self.p.param('Plot options',
+                     'Average').sigStateChanged.connect(self.plotAvg)
+        self.p.param('Plot options',
+                     'Normalize').sigStateChanged.connect(self.plotNormal)
+        self.p.param('Plot options',
+                     'Plot stack').sigStateChanged.connect(self.plotStack)
+        self.p.param('Plot options',
+                     'Start time').sigValueChanged.connect(self.startTime)
+        self.p.param('Plot options',
+                     'Axis scale').sigValueChanged.connect(self.axesSet)
         # self.p.param('Plot options', 'Use filename as name').sigValueChanged.connect(self.plotName)
-        self.p.param('Plot options', 'Delimiter').sigValueChanged.connect(self.setDelim)
+        self.p.param('Plot options',
+                     'Delimiter').sigValueChanged.connect(self.setDelim)
 
     def chooseFile(self):
-        self.file = QFileDialog.getOpenFileName(self, "Plot file",
-                                                "", "Data Files (*.dat);;CSV (*.csv);;"
-                                                    "Text Files (*.txt);;Python Files (*.py)")[0]
+        self.file = QFileDialog.getOpenFileName(
+            self, "Plot file", "", "Data Files (*.dat);;CSV (*.csv);;"
+            "Text Files (*.txt);;Python Files (*.py)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
         except:
             # QMessageBox.about(self, "Error", "No file chosen.")
             self.file = self.prev_file
+
             if self.file == "Filename":
                 self.file = r"C:\Users\bdprice\Documents\Data\UV Vis\PR\20200309" \
                             r"\E108Q 174 Monomer\M01_174_108_mono_activated_410nm_Scan000.dat"
@@ -148,7 +219,9 @@ class PlotGUI(QWidget):
     # def matPlot(self):
     #     plt_fig.main()
 
-    def clearLast(self):  # known bug where clear last clears all if plot multiple has been deselected
+    def clearLast(
+            self
+    ):  # known bug where clear last clears all if plot multiple has been deselected
         try:
             if self.plot_multiple:
                 self.win.removeItem(self.pl)
@@ -158,8 +231,11 @@ class PlotGUI(QWidget):
         except AttributeError:
             QMessageBox.about(self, "Error", "No plot to clear.")
         except:
-            QMessageBox.about(self, "Error", "Clear last can only clear the most recent plot. "
-                                             "There is not record of 'last' plot beside the one just cleared.")
+            QMessageBox.about(
+                self, "Error",
+                "Clear last can only clear the most recent plot. "
+                "There is not record of 'last' plot beside the one just cleared."
+            )
 
     def plotAvg(self):
         if self.plot_avg is False:
@@ -181,7 +257,8 @@ class PlotGUI(QWidget):
             self.plot_multiple = True
         else:
             self.plot_multiple = False
-        self.p.param('Plot options', 'Plot multiple').setValue(self.plot_multiple)
+        self.p.param('Plot options',
+                     'Plot multiple').setValue(self.plot_multiple)
 
     def plotStack(self):
         if self.plot_stack is False:
@@ -199,7 +276,8 @@ class PlotGUI(QWidget):
 
     def startTime(self):
         if is_number(self.p.param('Plot options', 'Start time').value()):
-            self.start_time = self.p.param('Plot options', 'Start time').value()
+            self.start_time = self.p.param('Plot options',
+                                           'Start time').value()
         else:
             self.start_time = "Default (time[0])"
         self.p.param('Plot options', 'Start time').setValue(self.start_time)
@@ -208,14 +286,14 @@ class PlotGUI(QWidget):
 
         self.plot_delimiter = self.p.param('Plot options', 'Delimiter').value()
 
-
     def axesSet(self):
 
-        if self.p.param('Plot options', 'Axis scale').value() in self.possible_axis:
-            self.each_axis = [ii.rstrip(' ').lstrip(' ') for ii in self.p.param('Plot options', 'Axis scale').value(
-
-            ).split(
-                ",")]
+        if self.p.param('Plot options',
+                        'Axis scale').value() in self.possible_axis:
+            self.each_axis = [
+                ii.rstrip(' ').lstrip(' ') for ii in self.p.param(
+                    'Plot options', 'Axis scale').value().split(",")
+            ]
 
             self.real_axes = True
 
@@ -227,13 +305,13 @@ class PlotGUI(QWidget):
 
             self.p.param('Plot options', 'Axis scale').setValue(self.plot_axes)
 
-
     def makePlot(self):
 
         try:
 
             if self.plot_multiple:
-                self.pl = self.win.addPlot()  # this will create additional plots in same window instead of re-plotting
+                # this will create additional plots in same window instead of re-plotting
+                self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
             elif self.plot_stack:
                 if not hasattr(self, 'pl'):
@@ -251,30 +329,41 @@ class PlotGUI(QWidget):
             self.getLines()
 
             if self.begin_line == -1:
-                QMessageBox.about(self, "Error", "Delimiter not in file. Attempting to use csv.")
+                QMessageBox.about(
+                    self, "Error",
+                    "Delimiter not in file. Attempting to use csv.")
                 self.plot_delimiter = ','
 
                 self.getLines()
 
-            self.data = pd.read_csv(self.file, sep=self.plot_delimiter, header=self.begin_line - 1,
-                                    skipfooter=self.footerskip, engine='python',
+            self.data = pd.read_csv(self.file,
+                                    sep=self.plot_delimiter,
+                                    header=self.begin_line - 1,
+                                    skipfooter=self.footerskip,
+                                    engine='python',
                                     index_col=False).to_numpy()
 
             if self.plot_avg:
                 if is_number(self.file.split('.')[-2][-3:]):
                     self.dataset = self.file.split('.')[-2][:-3]
-                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+                    filelist = glob.glob(self.dataset + '*' +
+                                         self.file.split('.')[-1])
                 else:
                     self.dataset = self.file.split('.')[-2]
-                    filelist = glob.glob(self.dataset + '*' + self.file.split('.')[-1])
+                    filelist = glob.glob(self.dataset + '*' +
+                                         self.file.split('.')[-1])
 
                 datalist = np.zeros(np.shape(self.data))
                 count = 0
+
                 for file in filelist:
-                    datalist = datalist + pd.read_csv(file,
-                                                      sep=self.plot_delimiter, header=self.begin_line - 1,
-                                                      skipfooter=self.footerskip, engine='python',
-                                                      index_col=False).to_numpy()
+                    datalist = datalist + pd.read_csv(
+                        file,
+                        sep=self.plot_delimiter,
+                        header=self.begin_line - 1,
+                        skipfooter=self.footerskip,
+                        engine='python',
+                        index_col=False).to_numpy()
                     count += 1
 
                 self.data = datalist / count
@@ -283,7 +372,8 @@ class PlotGUI(QWidget):
                 start = float(self.start_time)
                 self.data = self.data[np.where(self.data[:, 0] >= start)]
 
-            self.plot_name = self.file.split('/')[-1].split('.')[0].replace('_', ' ')
+            self.plot_name = self.file.split('/')[-1].split('.')[0].replace(
+                '_', ' ')
 
             # if self.plot_avg or self.plot_name:
             #     self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
@@ -294,21 +384,27 @@ class PlotGUI(QWidget):
 
             if self.plot_stack:
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
+
                 if self.plot_avg:
-                    self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + 'average'
+                    self.plot_name = ' '.join(
+                        self.plot_name.split(' ')[:-1]) + 'average'
             elif self.plot_avg:
-                self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
+                self.plot_title = ' '.join(
+                    self.plot_name.split(' ')[:-1]) + ' average'
             else:
                 self.plot_title = self.plot_name
 
             self.updatePlot()
 
         except AttributeError:
-            QMessageBox.about(self, "Error", "That file did not parse correctly.")
+            QMessageBox.about(self, "Error",
+                              "That file did not parse correctly.")
 
         except ValueError:
-            QMessageBox.about(self, "Error", "This is not a comma-separated file and the correct "
-                                             "delimiter was not specified.")
+            QMessageBox.about(
+                self, "Error",
+                "This is not a comma-separated file and the correct "
+                "delimiter was not specified.")
 
         self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
 
@@ -318,20 +414,28 @@ class PlotGUI(QWidget):
 
         for line in strippedlines:
             items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+
             if not all(items):
                 pass
             else:
                 self.begin_line = strippedlines.index(line)
                 self.data_type = self.begin_line - 1
-                self.data_types = [ii.rstrip('"').lstrip('"') for ii
-                                   in strippedlines[self.data_type].split(self.plot_delimiter)]
+                self.data_types = [
+                    ii.rstrip('"').lstrip('"') for ii in strippedlines[
+                        self.data_type].split(self.plot_delimiter)
+                ]
+
                 break
 
         if self.begin_line != -1:
             for line in strippedlines[::-1]:
-                items = [is_number(ii) for ii in line.split(self.plot_delimiter)]
+                items = [
+                    is_number(ii) for ii in line.split(self.plot_delimiter)
+                ]
+
                 if all(items):
                     self.end_line = strippedlines.index(line) + 1
+
                     break
                 else:
                     self.end_line = strippedlines.index(strippedlines[-1])
@@ -368,19 +472,23 @@ class PlotGUI(QWidget):
 
                 if start > 0:  # should catch string start times as well as negatives
                     self.data = self.data[np.where(self.data[:, 0] > start)]
-                    self.start_time = self.data[np.where(self.data[:, 0] > start)][0][0]
+                    self.start_time = self.data[np.where(
+                        self.data[:, 0] > start)][0][0]
                 else:
                     self.data = self.data[np.where(self.data[:, 0] > 0)]
-                    self.start_time = self.data[np.where(self.data[:, 0] > 0)][0][0]
+                    self.start_time = self.data[np.where(
+                        self.data[:, 0] > 0)][0][0]
 
-                self.p.param('Plot options', 'Start time').setValue(np.round(self.start_time, 8))
+                self.p.param('Plot options', 'Start time').setValue(
+                    np.round(self.start_time, 8))
 
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
                 if np.max(np.absolute(self.data[:, ii])) == 0:
                     pass
                 else:
-                    self.data[:, ii] = self.data[:, ii] / np.max(np.absolute(self.data[:, ii]))
+                    self.data[:, ii] = self.data[:, ii] / \
+                        np.max(np.absolute(self.data[:, ii]))
 
             self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
@@ -388,11 +496,17 @@ class PlotGUI(QWidget):
 
         if self.plot_stack:
             for ii in range(1, len(self.data_types)):
-                self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii + self.plot_count, name=self.plot_name)
+                self.pl.plot(self.data[:, 0],
+                             self.data[:, ii],
+                             pen=ii + self.plot_count,
+                             name=self.plot_name)
             self.plot_count += 1
         else:
             for ii in range(1, len(self.data_types)):
-                self.pl.plot(self.data[:, 0], self.data[:, ii], pen=ii, name=self.data_types[ii].rstrip('\n'))
+                self.pl.plot(self.data[:, 0],
+                             self.data[:, ii],
+                             pen=ii,
+                             name=self.data_types[ii].rstrip('\n'))
             self.pl.setTitle(self.plot_title)
 
         self.pl.enableAutoRange()
@@ -406,7 +520,8 @@ class PlotGUI(QWidget):
             self.close()
         elif e.key() == QtCore.Qt.Key_Enter:
             self.makePlot()
-        elif e.key() == 16777220:  # enter for Mac, will need to find out enter for windows
+        elif e.key(
+        ) == 16777220:  # enter for Mac, will need to find out enter for windows
             self.makePlot()
         else:
             QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
