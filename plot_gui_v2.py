@@ -1,11 +1,12 @@
 """
 This opens a gui and lets the user update with their chosen .dat
 """
-#!/usr/bin/python
+# !/usr/bin/python
 
 import glob
 import sys
 import platform
+# import csv_fig  # error appears when using this submodule
 
 import numpy as np
 import pandas as pd
@@ -59,9 +60,9 @@ class PlotGUI(QWidget):
 
         self.params = [{
             'name':
-            'Plot options',
+                'Plot options',
             'type':
-            'group',
+                'group',
             'children': [
                 {
                     'name': 'Plot multiple',
@@ -112,9 +113,9 @@ class PlotGUI(QWidget):
 
         self.filestuff = [{
             'name':
-            'File',
+                'File',
             'type':
-            'group',
+                'group',
             'children': [
                 {
                     'name': 'Update plot',
@@ -137,6 +138,10 @@ class PlotGUI(QWidget):
                     'type': 'str',
                     'value': self.file
                 },
+                # {
+                #     'name': 'Create png',
+                #     'type': 'action'
+                # }
             ]
         }]
 
@@ -194,6 +199,7 @@ class PlotGUI(QWidget):
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
         self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
+        # self.f.param('File', 'Create png').sigActivated.connect(self.makePNG)
 
         self.p.param('Plot options',
                      'Plot multiple').sigStateChanged.connect(self.plotMult)
@@ -210,14 +216,10 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Delimiter').sigValueChanged.connect(self.setDelim)
 
-        for name in self.data_types:
-            self.l.param('Plot lines',
-                           name).sigStateChanged.connect(self.plotShow)
-
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(
             self, "Plot file", "", "Data Files (*.dat);;CSV (*.csv);;"
-            "Text Files (*.txt);;Python Files (*.py)")[0]
+                                   "Text Files (*.txt);;Python Files (*.py)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
@@ -268,9 +270,13 @@ class PlotGUI(QWidget):
         else:
             self.plot_show[name] = False
 
-        print(name)
-
         self.l.param('Plot lines', name).setValue(self.plot_show[name])
+
+    # def makePNG(self):
+    #     try:
+    #         csv_fig.main()
+    #     except:
+    #         pass
 
     def plotAvg(self):
         if self.plot_avg is False:
@@ -337,8 +343,10 @@ class PlotGUI(QWidget):
             self.plot_axes = 'xlin, ylin'
 
             self.real_axes = False
+            self.start_time = "Default (time[0])"
 
             self.p.param('Plot options', 'Axis scale').setValue(self.plot_axes)
+            self.p.param('Plot options', 'Start time').setValue(self.start_time)
 
     def makePlot(self):
 
@@ -483,13 +491,14 @@ class PlotGUI(QWidget):
             for name in self.data_types:
                 name = name.rstrip('\n').strip(' ')
                 if self.data_types.index(name) != 0:
-                    self.child_list.append({'name': name, 'type': 'bool'})
+                    self.child_list.append({'name': name, 'type': 'bool', 'value': True, 'tip': f"Plot {name} if "
+                                                                                                "selected"})
                     self.plot_show[name] = True
 
             self.plotlines = [{
                 'name': 'Plot lines',
                 'type': 'group',
-                'children': self.child_list
+                'children': self.child_list,
             }]
 
             self.l = Parameter.create(name='plotlines',
@@ -498,20 +507,11 @@ class PlotGUI(QWidget):
 
             self.tff.setParameters(self.l, showTop=False)
 
-            """ getting some fuck-ass recursion error right here... thing runs too many times because it is 
-            repeatedly being triggered. need to resolve triggering issue"""
+        for name in self.plot_show:
+            self.plot_show[name] = self.l.param('Plot lines', name).value()
 
-        #     for name in self.data_types:
-        #         if self.data_types.index(name) != 0:
-        #             self.l.param('Plot lines',
-        #                          name).sigStateChanged.connect(lambda: self.plotShow(name))
-        #
-        # if self.file == self.current_file:
-        #     for name in self.data_types:
-        #         if self.data_types.index(name) != 0:
-        #             name = name.rstrip('\n').strip(' ')
-        #             self.l.param('Plot lines',
-        #                          name).setValue(self.plot_show[name])
+            # self.l.param('Plot lines',
+            #              name).sigStateChanged.connect(lambda: self.plotShow(name))
 
     def updatePlot(self):
 
@@ -534,7 +534,7 @@ class PlotGUI(QWidget):
             else:
                 self.pl.setLogMode(False, False)
 
-            if xset == True:
+            if xset:
 
                 try:
                     start = float(self.start_time)
@@ -559,29 +559,41 @@ class PlotGUI(QWidget):
                     pass
                 else:
                     self.data[:, ii] = self.data[:, ii] / \
-                        np.max(np.absolute(self.data[:, ii]))
+                                       np.max(np.absolute(self.data[:, ii]))
 
             self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
             self.pl.setLabel('left', 'Magnitude')
 
-
-#        if self.plot_stack:
-#            for ii in range(1, len(self.data_types)):
-#                self.pl.plot(self.data[:, 0],
-#                             self.data[:, ii],
-#                             pen=ii + self.plot_count,
-#                             name=self.plot_name)
-#            self.plot_count += 1
-#        else:
-#            for ii in range(1, len(self.data_types)):
-#                self.pl.plot(self.data[:, 0],
-#                             self.data[:, ii],
-#                             pen=ii,
-#                             name=self.data_types[ii].rstrip('\n'))
-#            self.pl.setTitle(self.plot_title)
+        #        if self.plot_stack:
+        #            for ii in range(1, len(self.data_types)):
+        #                self.pl.plot(self.data[:, 0],
+        #                             self.data[:, ii],
+        #                             pen=ii + self.plot_count,
+        #                             name=self.plot_name)
+        #            self.plot_count += 1
+        #        else:
+        #            for ii in range(1, len(self.data_types)):
+        #                self.pl.plot(self.data[:, 0],
+        #                             self.data[:, ii],
+        #                             pen=ii,
+        #                             name=self.data_types[ii].rstrip('\n'))
+        #            self.pl.setTitle(self.plot_title)
 
         if self.plot_stack:
+            # if len(self.data_types) <= 2:
+            #     for key in self.plot_show:
+            #         if self.plot_show[key]:
+            #             ii = self.data_types.index(key)
+            #
+            #             if ii != 0:
+            #                 self.pl.plot(self.data[:, 0],
+            #                              self.data[:, ii],
+            #                              pen=ii + self.plot_count,
+            #                              name=self.plot_name)
+            #             self.plot_count += 1
+
+            # if len(self.data_types) > 2:
             for key in self.plot_show:
                 if self.plot_show[key]:
                     ii = self.data_types.index(key)
@@ -590,7 +602,7 @@ class PlotGUI(QWidget):
                         self.pl.plot(self.data[:, 0],
                                      self.data[:, ii],
                                      pen=ii + self.plot_count,
-                                     name=self.plot_name)
+                                     name=self.data_types[ii].rstrip('\n') + "--" + self.plot_name)
                     self.plot_count += 1
 
         else:
