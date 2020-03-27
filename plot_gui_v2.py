@@ -21,7 +21,7 @@ from pyqtgraph.parametertree import *
 # import plt_fig
 """
 TODO
-[ ] Add comments
+[X] Add comments
 [ ] Add button to export plot with Matplotlib and save to .png -- weird bug in export pyqtgraph for some reason
 """
 
