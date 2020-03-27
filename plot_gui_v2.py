@@ -24,6 +24,11 @@ TODO
 
 
 def is_number(s):
+    """
+    :param s:
+    :return:
+    stackexchange function to check if user input is a feasible number
+    """
     try:
         float(s)
 
@@ -33,7 +38,13 @@ def is_number(s):
 
 
 class PlotGUI(QWidget):
+    """
+    Main window of plotting app
+    """
     def __init__(self):
+        """
+        Define initialization values of user inputs
+        """
         super().__init__()
         self.file = r"Filename"
         self.prev_file = self.file
@@ -46,7 +57,8 @@ class PlotGUI(QWidget):
         self.data_types = ['null']
         self.plot_count = 0
         self.plot_delimiter = ','
-        self.start_time = "Default (time[0])"
+        self.start_x = "Default (x[0])"
+        self.end_x = "Default (x[-1])"
         self.plot_axes = 'xlin, ylin'
         self.possible_axis = [
             "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
@@ -57,6 +69,11 @@ class PlotGUI(QWidget):
         self.show()
 
     def initUI(self):
+
+        """
+        Create parametertrees and window
+        :return:
+        """
 
         self.params = [{
             'name':
@@ -89,10 +106,16 @@ class PlotGUI(QWidget):
                     'tip': "This will stack plots"
                 },
                 {
-                    'name': 'Start time',
+                    'name': 'Start x',
                     'type': 'str',
-                    'value': self.start_time,
-                    'tip': "This will start the plot at time entered"
+                    'value': self.start_x,
+                    'tip': "This will start the plot at x val entered"
+                },
+                {
+                    'name': 'End x',
+                    'type': 'str',
+                    'value': self.end_x,
+                    'tip': "This will end the plot at x val entered"
                 },
                 {
                     'name': 'Axis scale',
@@ -210,34 +233,50 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Plot stack').sigStateChanged.connect(self.plotStack)
         self.p.param('Plot options',
-                     'Start time').sigValueChanged.connect(self.startTime)
+                     'Start x').sigValueChanged.connect(self.startX)
+        self.p.param('Plot options',
+                     'End x').sigValueChanged.connect(self.endX)
         self.p.param('Plot options',
                      'Axis scale').sigValueChanged.connect(self.axesSet)
         self.p.param('Plot options',
                      'Delimiter').sigValueChanged.connect(self.setDelim)
 
     def chooseFile(self):
+        """
+        Opens dialog and returns filename for plotting. If filename isn't found, returns file for a file on bprice
+        computer... not super helpful for distribution and wi
+        :return:
+        """
         self.file = QFileDialog.getOpenFileName(
             self, "Plot file", "", "Data Files (*.dat);;CSV (*.csv);;"
                                    "Text Files (*.txt);;Python Files (*.py)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
-        except:
-            self.file = self.prev_file
 
-            if self.file == "Filename":  # this part will only work on bprice machine - might be good to generalize
-                if platform.system() == 'Darwin':
-                    self.file = r"/Users/Brad/Documents/Research/2020/Data/20200309" \
-                                r"/M01_174_108_mono_activated_410nm_Scan000.dat"
-                elif platform.system() == 'Windows':
-                    self.file = r"C:\Users\bdprice\Documents\Data\UV Vis\PR\20200309" \
-                                r"\E108Q 174 Monomer\M01_174_108_mono_activated_410nm_Scan000.dat"
-            fileopen = open(self.file, 'r')
+            self.lines = fileopen.readlines()
+            fileopen.close()
+        except FileNotFoundError:
+            # try:
+            #     self.file = self.prev_file
+            #
+            #     if self.file == "Filename":  # this part will only work on bprice machine
+            #     # - might be good to generalize
+            #         if platform.system() == 'Darwin':
+            #             self.file = r"/Users/Brad/Documents/Research/2020/Data/20200309" \
+            #                         r"/M01_174_108_mono_activated_410nm_Scan000.dat"
+            #         elif platform.system() == 'Windows':
+            #             self.file = r"C:\Users\bdprice\Documents\Data\UV Vis\PR\20200309" \
+            #                         r"\E108Q 174 Monomer\M01_174_108_mono_activated_410nm_Scan000.dat"
+            #     fileopen = open(self.file, 'r')
+            #
+            #     self.lines = fileopen.readlines()
+            #     fileopen.close()
+            # except FileNotFoundError:
+            #     self.file = r"File not found (or maybe not selected)"
+            self.file = r"No file selected"
 
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
-        self.lines = fileopen.readlines()
-        fileopen.close()
 
     def clearPlot(self):
         self.win.clear()
@@ -315,13 +354,32 @@ class PlotGUI(QWidget):
     #         self.plot_name = False
     #     self.p.param('Plot options', 'Use filename as name').setValue(self.plot_name)
 
-    def startTime(self):
-        if is_number(self.p.param('Plot options', 'Start time').value()):
-            self.start_time = self.p.param('Plot options',
-                                           'Start time').value()
+    def startX(self):
+        if is_number(self.p.param('Plot options', 'Start x').value()):
+            self.start_x = self.p.param('Plot options',
+                                        'Start x').value()
         else:
-            self.start_time = "Default (time[0])"
-        self.p.param('Plot options', 'Start time').setValue(self.start_time)
+            self.start_x = "Default (x[0])"
+        self.p.param('Plot options', 'Start x').setValue(self.start_x)
+
+    def endX(self):
+        if is_number(self.p.param('Plot options', 'End x').value()):
+            if is_number(self.p.param('Plot options', 'Start x').value()):
+                if float(self.p.param('Plot options',
+                                      'Start x').value()) < \
+                        float(self.p.param('Plot options', 'End x').value()):
+                    self.end_x = self.p.param('Plot options',
+                                              'End x').value()
+                else:
+                    QMessageBox.about(
+                        self, "Error",
+                        "End time before start time.")
+                    self.end_x = "Default (x[-1])"
+            else:
+                self.end_x = float(self.p.param('Plot options', 'End x').value())
+        else:
+            self.end_x = "Default (x[-1])"
+        self.p.param('Plot options', 'End x').setValue(self.end_x)
 
     def setDelim(self):
 
@@ -343,10 +401,10 @@ class PlotGUI(QWidget):
             self.plot_axes = 'xlin, ylin'
 
             self.real_axes = False
-            self.start_time = "Default (time[0])"
+            self.start_x = "Default (x[0])"
 
             self.p.param('Plot options', 'Axis scale').setValue(self.plot_axes)
-            self.p.param('Plot options', 'Start time').setValue(self.start_time)
+            self.p.param('Plot options', 'Start x').setValue(self.start_x)
 
     def makePlot(self):
 
@@ -411,8 +469,8 @@ class PlotGUI(QWidget):
 
                 self.data = datalist / count
 
-            if is_number(self.start_time):
-                start = float(self.start_time)
+            if is_number(self.start_x):
+                start = float(self.start_x)
                 self.data = self.data[np.where(self.data[:, 0] >= start)]
 
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace(
@@ -537,21 +595,21 @@ class PlotGUI(QWidget):
             if xset:
 
                 try:
-                    start = float(self.start_time)
+                    start = float(self.start_x)
                 except ValueError:
                     start = -1
 
                 if start > 0:  # should catch string start times as well as negatives
                     self.data = self.data[np.where(self.data[:, 0] > start)]
-                    self.start_time = self.data[np.where(
+                    self.start_x = self.data[np.where(
                         self.data[:, 0] > start)][0][0]
                 else:
                     self.data = self.data[np.where(self.data[:, 0] > 0)]
-                    self.start_time = self.data[np.where(
+                    self.start_x = self.data[np.where(
                         self.data[:, 0] > 0)][0][0]
 
-                self.p.param('Plot options', 'Start time').setValue(
-                    np.round(self.start_time, 8))
+                self.p.param('Plot options', 'Start x').setValue(
+                    np.round(self.start_x, 8))
 
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
@@ -565,35 +623,16 @@ class PlotGUI(QWidget):
         else:
             self.pl.setLabel('left', 'Magnitude')
 
-        #        if self.plot_stack:
-        #            for ii in range(1, len(self.data_types)):
-        #                self.pl.plot(self.data[:, 0],
-        #                             self.data[:, ii],
-        #                             pen=ii + self.plot_count,
-        #                             name=self.plot_name)
-        #            self.plot_count += 1
-        #        else:
-        #            for ii in range(1, len(self.data_types)):
-        #                self.pl.plot(self.data[:, 0],
-        #                             self.data[:, ii],
-        #                             pen=ii,
-        #                             name=self.data_types[ii].rstrip('\n'))
-        #            self.pl.setTitle(self.plot_title)
+        if is_number(self.end_x) and not is_number(self.start_x):
+            if float(self.end_x) > np.min(self.data[:, 0]):
+                self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
+            else:
+                QMessageBox.about(self, "Error", "End x is less than default Start x")
+                self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
+        elif is_number(self.end_x) and is_number(self.start_x):
+            self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
 
         if self.plot_stack:
-            # if len(self.data_types) <= 2:
-            #     for key in self.plot_show:
-            #         if self.plot_show[key]:
-            #             ii = self.data_types.index(key)
-            #
-            #             if ii != 0:
-            #                 self.pl.plot(self.data[:, 0],
-            #                              self.data[:, ii],
-            #                              pen=ii + self.plot_count,
-            #                              name=self.plot_name)
-            #             self.plot_count += 1
-
-            # if len(self.data_types) > 2:
             for key in self.plot_show:
                 if self.plot_show[key]:
                     ii = self.data_types.index(key)
