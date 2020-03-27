@@ -45,6 +45,7 @@ class PlotGUI(QWidget):
         self.possible_axis = [
             "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
         ]
+        self.data_types = ['none']
         self.real_axes = False
         self.initUI()
 
@@ -132,10 +133,23 @@ class PlotGUI(QWidget):
                     'type': 'str',
                     'value': self.file
                 },
-                # {'name': 'Matplotlib create', 'type': 'action'},
-                # {'name': 'Export last', 'type': 'action'}
             ]
         }]
+
+        self.child_list = []
+        self.plot_show = {}
+
+        for name in self.data_types:
+            self.child_list.append({'name': name, 'type': 'bool'})
+            self.plot_show[name] = True
+
+        self.plotlines = [{
+            'name': 'Plot lines',
+            'type': 'group',
+            'children': self.child_list
+        }]
+
+        print(self.plotlines)
 
         self.p = Parameter.create(name='params',
                                   type='group',
@@ -143,6 +157,9 @@ class PlotGUI(QWidget):
         self.f = Parameter.create(name='filestuff',
                                   type='group',
                                   children=self.filestuff)
+        self.l = Parameter.create(name='plotlines',
+                                  type='group',
+                                  children=self.plotlines)
 
         self.t = ParameterTree()
         self.t.setParameters(self.p, showTop=False)
@@ -151,6 +168,10 @@ class PlotGUI(QWidget):
         self.tf = ParameterTree()
         self.tf.setParameters(self.f, showTop=False)
         self.tf.setWindowTitle('File parameters')
+
+        self.tff = ParameterTree()
+        self.tff.setParameters(self.l, showTop=False)
+        self.tff.setWindowTitle('Plot lines')
 
         Layout = QGridLayout()
 
@@ -163,15 +184,15 @@ class PlotGUI(QWidget):
 
         Layout.addWidget(self.tf, 0, 1)  # deleted some shit here
         Layout.addWidget(self.t, 0, 2)
+        Layout.addWidget(self.tff, 0, 3)
         Layout.addWidget(self.win, 1, 0, 1, 3)
 
         self.f.param('File',
                      'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
-        # self.f.param('File', 'Matplotlib create').sigActivated.connect(self.matPlot)
-        # self.f.param('File', 'Export last').sigActivated.connect(self.exportPlot)
         self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
+
         self.p.param('Plot options',
                      'Plot multiple').sigStateChanged.connect(self.plotMult)
         self.p.param('Plot options',
@@ -184,9 +205,12 @@ class PlotGUI(QWidget):
                      'Start time').sigValueChanged.connect(self.startTime)
         self.p.param('Plot options',
                      'Axis scale').sigValueChanged.connect(self.axesSet)
-        # self.p.param('Plot options', 'Use filename as name').sigValueChanged.connect(self.plotName)
         self.p.param('Plot options',
                      'Delimiter').sigValueChanged.connect(self.setDelim)
+
+        for name in self.data_types:
+            self.tff.param('Plot lines',
+                           name).sigStateChanged.connect(self.plotShow)
 
     def chooseFile(self):
         self.file = QFileDialog.getOpenFileName(
@@ -196,7 +220,6 @@ class PlotGUI(QWidget):
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
         except:
-            # QMessageBox.about(self, "Error", "No file chosen.")
             self.file = self.prev_file
 
             if self.file == "Filename":
@@ -216,12 +239,8 @@ class PlotGUI(QWidget):
             QMessageBox.about(self, "Error", "No plot to clear.")
         self.plot_count = 0
 
-    # def matPlot(self):
-    #     plt_fig.main()
-
-    def clearLast(
-            self
-    ):  # known bug where clear last clears all if plot multiple has been deselected
+    def clearLast(self):  # known bug where clear last clears
+        # all if plot multiple has been deselected
         try:
             if self.plot_multiple:
                 self.win.removeItem(self.pl)
@@ -236,6 +255,13 @@ class PlotGUI(QWidget):
                 "Clear last can only clear the most recent plot. "
                 "There is not record of 'last' plot beside the one just cleared."
             )
+
+    def plotShow(self, name):
+        if self.plot_show[name] is False:
+            self.plot_show[name] = True
+        else:
+            self.plot_show[name] = False
+        self.l.param('Plot lines', name).setValue(self.plot_show[name])
 
     def plotAvg(self):
         if self.plot_avg is False:
@@ -324,7 +350,7 @@ class PlotGUI(QWidget):
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
 
-            self.begin_idx = self.begin_line = self.data_type = self.data_types = self.footerskip = -1
+            self.begin_idx = self.begin_line = self.data_type = self.footerskip = -1
 
             self.getLines()
 
@@ -374,13 +400,6 @@ class PlotGUI(QWidget):
 
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace(
                 '_', ' ')
-
-            # if self.plot_avg or self.plot_name:
-            #     self.plot_title = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
-            # elif self.plot_stack:
-            #     self.plot_name = ' '.join(self.plot_name.split(' ')[:-1]) + ' average'
-            # else:
-            #     self.plot_title = self.plot_name
 
             if self.plot_stack:
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
