@@ -3,6 +3,9 @@ This opens a gui and lets the user update with their chosen .dat
 """
 # !/usr/bin/python
 
+# need to make sure when creating app that I use python3 because that is in usr/local/bin, which is where my local
+# python dist and py2app are located
+
 import glob
 import sys
 import platform
