@@ -521,7 +521,7 @@ class PlotGUI(QWidget):
 
                 self.data = datalist / count
 
-            if is_number(self.start_x):
+            if is_number(self.start_x):  # selects part of data that occurs after the user-specified start x
                 start = float(self.start_x)
                 if start <= max(self.data[:, 0]):
                     self.data = self.data[np.where(self.data[:, 0] >= start)]
@@ -562,6 +562,10 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
 
     def getLines(self):
+        """
+        Finds lines where data lives. That info is used in pandas.read_csv to skip header and footer.
+        :return:
+        """
 
         strippedlines = [ii.rstrip('\n').rstrip(',') for ii in self.lines]
 
@@ -598,6 +602,11 @@ class PlotGUI(QWidget):
         self.plotLine()
 
     def plotLine(self):
+        """
+        Recursive parametertree creation that depends on number of datatypes in file. Skips over the first data type
+        -- assumed to be x axis in this software.
+        :return:
+        """
 
         if self.file != self.current_file:
             self.child_list = []
@@ -629,10 +638,14 @@ class PlotGUI(QWidget):
             #              name).sigStateChanged.connect(lambda: self.plotShow(name))
 
     def updatePlot(self):
+        """
+        Activated when user clicks Update Plot. (Re)draws lines depending on user selections.
+        :return:
+        """
 
         xset = False
 
-        if self.real_axes:
+        if self.real_axes:  # handles cases of user input axes types
 
             if "xlog" in self.each_axis and "ylog" in self.each_axis:
                 for ii in range(1, len(self.data_types)):
@@ -670,8 +683,7 @@ class PlotGUI(QWidget):
                     self.p.param('Plot options', 'Start x').setValue(
                         "Default (x[0])")
 
-
-        if self.plot_normal:
+        if self.plot_normal:  # normalizes data to 1
             for ii in range(1, len(self.data_types)):
                 if np.max(np.absolute(self.data[:, ii])) == 0:
                     pass
@@ -683,7 +695,7 @@ class PlotGUI(QWidget):
         else:
             self.pl.setLabel('left', 'Magnitude')
 
-        if is_number(self.end_x) and not is_number(self.start_x):
+        if is_number(self.end_x) and not is_number(self.start_x):  # exception handling for start and end time cases
             if float(self.end_x) > np.min(self.data[:, 0]):
                 self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
             else:
@@ -696,7 +708,7 @@ class PlotGUI(QWidget):
                 QMessageBox.about(self, "Error", "End x is less than Start x")
                 self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
 
-        if self.plot_stack:
+        if self.plot_stack:  # plots overtop of last and plots in new color
             for key in self.plot_show:
                 if self.plot_show[key]:
                     ii = self.data_types.index(key)
