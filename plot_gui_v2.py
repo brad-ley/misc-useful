@@ -41,6 +41,7 @@ class PlotGUI(QWidget):
     """
     Main window of plotting app
     """
+
     def __init__(self):
         """
         Define initialization values of user inputs
@@ -60,9 +61,10 @@ class PlotGUI(QWidget):
         self.start_x = "Default (x[0])"
         self.end_x = "Default (x[-1])"
         self.plot_axes = 'xlin, ylin'
-        self.possible_axis = [
-            "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
-        ]
+        # self.possible_axis = [
+        #     "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
+        # ]
+        self.possible_axis = {"xlog", "ylog", "xlin", "ylin"}
         self.real_axes = False
         self.initUI()
 
@@ -121,7 +123,7 @@ class PlotGUI(QWidget):
                     'name': 'Axis scale',
                     'type': 'str',
                     'value': self.plot_axes,
-                    'tip': "xlin, ylin, xlog, ylog are all available"
+                    'tip': "xlin, ylin, xlog, ylog; default x,y lin if unspecified"
                 },
                 # {'name': 'Use filename as name', 'type': 'bool', 'value': self.plot_name, 'tip':
                 #     "Uses data name in file if false, uses plot title if true"},
@@ -274,11 +276,15 @@ class PlotGUI(QWidget):
             #     fileopen.close()
             # except FileNotFoundError:
             #     self.file = r"File not found (or maybe not selected)"
-            self.file = r"No file selected"
+            self.file = r"No file selected"  # simplified code here for distribution purposes
 
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
 
     def clearPlot(self):
+        """
+        This clears the whole plot window
+        :return:
+        """
         self.win.clear()
         try:
             delattr(self, 'pl')
@@ -288,6 +294,11 @@ class PlotGUI(QWidget):
 
     def clearLast(self):  # known bug where clear last clears
         # all if plot multiple has been deselected
+        """
+        This clears the last plot made. Can't clear more than one plot though, as self.pl no longer exists after it
+        was cleared
+        :return:
+        """
         try:
             if self.plot_multiple:
                 self.win.removeItem(self.pl)
@@ -304,6 +315,11 @@ class PlotGUI(QWidget):
             )
 
     def plotShow(self, name):
+        """
+        This is used to choose which lines to show on a given plot
+        :param name:
+        :return:
+        """
         if self.plot_show[name] is False:
             self.plot_show[name] = True
         else:
@@ -318,6 +334,10 @@ class PlotGUI(QWidget):
     #         pass
 
     def plotAvg(self):
+        """
+        Averages all similarly-named files if selected
+        :return:
+        """
         if self.plot_avg is False:
             self.plot_avg = True
         else:
@@ -325,6 +345,10 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Average').setValue(self.plot_avg)
 
     def plotNormal(self):
+        """
+        Normalizes plotted lines to 1 if selected
+        :return:
+        """
         if self.plot_normal is False:
             self.plot_normal = True
         else:
@@ -333,6 +357,10 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Normalize').setValue(self.plot_normal)
 
     def plotMult(self):
+        """
+        Makes a new graph in plot window to compare side by side
+        :return:
+        """
         if self.plot_multiple is False:
             self.plot_multiple = True
         else:
@@ -341,6 +369,10 @@ class PlotGUI(QWidget):
                      'Plot multiple').setValue(self.plot_multiple)
 
     def plotStack(self):
+        """
+        Plots new file over old file to compare on top
+        :return:
+        """
         if self.plot_stack is False:
             self.plot_stack = True
         else:
@@ -355,6 +387,10 @@ class PlotGUI(QWidget):
     #     self.p.param('Plot options', 'Use filename as name').setValue(self.plot_name)
 
     def startX(self):
+        """
+        Allows user to select plotting start time
+        :return:
+        """
         if is_number(self.p.param('Plot options', 'Start x').value()):
             self.start_x = self.p.param('Plot options',
                                         'Start x').value()
@@ -363,6 +399,10 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'Start x').setValue(self.start_x)
 
     def endX(self):
+        """
+        Allows user to select plotting end time. Error handling controls if end < start, etc.
+        :return:
+        """
         if is_number(self.p.param('Plot options', 'End x').value()):
             if is_number(self.p.param('Plot options', 'Start x').value()):
                 if float(self.p.param('Plot options',
@@ -382,17 +422,21 @@ class PlotGUI(QWidget):
         self.p.param('Plot options', 'End x').setValue(self.end_x)
 
     def setDelim(self):
+        """Used for non csv files, can plot tab sep or space sep"""
 
         self.plot_delimiter = self.p.param('Plot options', 'Delimiter').value()
 
     def axesSet(self):
+        """
+        Allows user to choose if they want to do log or lin axes on either. Error handling for undefined values if
+        values are zero or negative.
+        :return:
+        """
+        axes = [ii.strip(' ') for ii in self.p.param('Plot options',
+                                                     'Axis scale').value().split(',')]
 
-        if self.p.param('Plot options',
-                        'Axis scale').value() in self.possible_axis:
-            self.each_axis = [
-                ii.rstrip(' ').lstrip(' ') for ii in self.p.param(
-                    'Plot options', 'Axis scale').value().split(",")
-            ]
+        if all(item in self.possible_axis for item in axes):
+            self.each_axis = axes
 
             self.real_axes = True
 
@@ -407,8 +451,12 @@ class PlotGUI(QWidget):
             self.p.param('Plot options', 'Start x').setValue(self.start_x)
 
     def makePlot(self):
+        """
+        Extracts data and sets up plotting window
+        :return:
+        """
 
-        try:
+        try:  # handles how many plots exist and how to clear them depending on user options
 
             if self.plot_multiple:
                 # this will create additional plots in same window instead of re-plotting
@@ -425,7 +473,8 @@ class PlotGUI(QWidget):
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
 
-            self.begin_idx = self.begin_line = self.data_type = self.footerskip = -1
+            self.begin_idx = self.begin_line = self.data_type = self.footerskip = -1  # set to determine if a file
+            # doesn't actually have any plottable data
 
             self.getLines()
 
@@ -444,7 +493,7 @@ class PlotGUI(QWidget):
                                     engine='python',
                                     index_col=False).to_numpy()
 
-            if self.plot_avg:
+            if self.plot_avg:  # handles averaging stupidly... just adds columns and divides by number of files
                 if is_number(self.file.split('.')[-2][-3:]):
                     self.dataset = self.file.split('.')[-2][:-3]
                     filelist = glob.glob(self.dataset + '*' +
@@ -471,7 +520,12 @@ class PlotGUI(QWidget):
 
             if is_number(self.start_x):
                 start = float(self.start_x)
-                self.data = self.data[np.where(self.data[:, 0] >= start)]
+                if start <= max(self.data[:, 0]):
+                    self.data = self.data[np.where(self.data[:, 0] >= start)]
+                else:
+                    QMessageBox.about(self, "Error", "Start x is larger than max x for file.")
+                    self.start_x = "Default (x[0])"
+                self.p.param('Plot options', 'Start x').setValue(self.start_x)
 
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace(
                 '_', ' ')
@@ -577,15 +631,15 @@ class PlotGUI(QWidget):
 
         if self.real_axes:
 
-            if self.each_axis == ["xlog", "ylog"]:
+            if "xlog" in self.each_axis and "ylog" in self.each_axis:
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
                 self.pl.setLogMode(True, True)
                 xset = True
-            elif self.each_axis[0] == "xlog":
+            elif "xlog" in self.each_axis:
                 self.pl.setLogMode(True, False)
                 xset = True
-            elif self.each_axis[1] == "ylog":
+            elif "ylog" in self.each_axis:
                 for ii in range(1, len(self.data_types)):
                     self.data[:, ii] = np.abs(self.data[:, ii])
                 self.pl.setLogMode(False, True)
@@ -603,13 +657,16 @@ class PlotGUI(QWidget):
                     self.data = self.data[np.where(self.data[:, 0] > start)]
                     self.start_x = self.data[np.where(
                         self.data[:, 0] > start)][0][0]
+                    self.p.param('Plot options', 'Start x').setValue(
+                        np.round(self.start_x, 8))
                 else:
                     self.data = self.data[np.where(self.data[:, 0] > 0)]
                     self.start_x = self.data[np.where(
                         self.data[:, 0] > 0)][0][0]
+                    QMessageBox.about(self, "Error", "Can't have negatives or zeros for log axis.")
+                    self.p.param('Plot options', 'Start x').setValue(
+                        "Default (x[0])")
 
-                self.p.param('Plot options', 'Start x').setValue(
-                    np.round(self.start_x, 8))
 
         if self.plot_normal:
             for ii in range(1, len(self.data_types)):
@@ -630,7 +687,11 @@ class PlotGUI(QWidget):
                 QMessageBox.about(self, "Error", "End x is less than default Start x")
                 self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
         elif is_number(self.end_x) and is_number(self.start_x):
-            self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
+            if float(self.end_x) > float(self.start_x):
+                self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
+            else:
+                QMessageBox.about(self, "Error", "End x is less than Start x")
+                self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
 
         if self.plot_stack:
             for key in self.plot_show:
