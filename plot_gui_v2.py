@@ -22,7 +22,8 @@ from pyqtgraph.parametertree import *
 """
 TODO
 [X] Add comments
-[ ] Add button to export plot with Matplotlib and save to .png -- weird bug in export pyqtgraph for some reason
+[ ] Allow user to select which column they'd like as their x axis -- not sure if worth doing because it will take 
+some refactoring and the columns can just be rearranged in vim
 """
 
 
