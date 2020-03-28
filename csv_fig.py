@@ -11,12 +11,14 @@ def makePlot(count):
     try:
         data = pd.read_csv(file, engine='python',
                            index_col=False).to_numpy()
-        title, yax, xax, logs, names = eg.multenterbox(title="Plot titles",
+        title, yax, xax, logs, names, size = eg.multenterbox(title="Plot titles",
                                                        fields=["Title", "y-axis", "x-axis", "Log? (type 'x, y, "
                                                                                   "or xy')",
-                                                               "Plot names"])
+                                                               "Plot names", "Font size"])
 
         nameslist = [ii.rstrip(' ').lstrip(' ') for ii in names.split(",")]
+
+        plt.rcParams.update({'font.size': size})
 
         plt.figure(count)
 
@@ -33,6 +35,7 @@ def makePlot(count):
         if 'y' in logs:
             plt.yscale('log')
         plt.title(title)
+        plt.tight_layout()
         plt.savefig(file[:-4] + ".png")
         plt.show()
 
