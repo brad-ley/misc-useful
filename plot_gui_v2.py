@@ -58,16 +58,15 @@ class PlotGUI(QWidget):
         self.plot_avg = False
         self.plot_stack = False
         self.plot_normal = False
-        # self.plot_name = False
         self.data_types = ['null']
         self.plot_count = 0
         self.plot_delimiter = ','
         self.start_x = "Default (x[0])"
         self.end_x = "Default (x[-1])"
         self.plot_axes = 'xlin, ylin'
-        # self.possible_axis = [
-        #     "xlog, ylog", "xlin, ylin", "xlog, ylin", "xlin, ylog"
-        # ]
+        self.x_string = "Default"
+        self.x_index = 0  # default value
+        self.changedX = False
         self.possible_axis = {"xlog", "ylog", "xlin", "ylin"}
         self.real_axes = False
         self.initUI()
@@ -174,6 +173,21 @@ class PlotGUI(QWidget):
             ]
         }]
 
+        self.xaxischilds = [{
+            'name':
+                'x axis',
+            'type':
+                'group',
+            'children': [
+                {
+                    'name': 'x axis',
+                    'type': 'str',
+                    'value': self.x_string,
+                    'tip': 'Type name for x axis data'
+                }
+            ]
+        }]
+
         self.child_list = []
         self.plot_show = {}
 
@@ -187,6 +201,10 @@ class PlotGUI(QWidget):
             'children': self.child_list
         }]
 
+        self.x = Parameter.create(name='xaxischilds',
+                                  type='group',
+                                  children=self.xaxischilds)
+
         self.p = Parameter.create(name='params',
                                   type='group',
                                   children=self.params)
@@ -196,6 +214,10 @@ class PlotGUI(QWidget):
         self.l = Parameter.create(name='plotlines',
                                   type='group',
                                   children=self.plotlines)
+
+        self.xa = ParameterTree()
+        self.xa.setParameters(self.x, showTop=False)
+        self.xa.setWindowTitle('X axis')
 
         self.t = ParameterTree()
         self.t.setParameters(self.p, showTop=False)
@@ -218,10 +240,13 @@ class PlotGUI(QWidget):
 
         self.setLayout(Layout)
 
-        Layout.addWidget(self.tf, 0, 1)  # deleted some shit here
-        Layout.addWidget(self.t, 0, 2)
-        Layout.addWidget(self.tff, 0, 3)
-        Layout.addWidget(self.win, 1, 0, 1, 4)  # position, then size (want full bottom row)
+        Layout.addWidget(self.tf, 0, 0, 2, 1)  # deleted some shit here
+        Layout.addWidget(self.t, 0, 1, 2, 1)
+        Layout.addWidget(self.tff, 0, 2, 1, 1)
+        Layout.addWidget(self.xa, 1, 2, 1, 1)
+        Layout.addWidget(self.win, 2, 0, 2, 3)  # position, then size (want full bottom row)
+
+        self.x.param('x axis', 'x axis').sigValueChanged.connect(self.xChoice)
 
         self.f.param('File',
                      'Choose file').sigActivated.connect(self.chooseFile)
@@ -336,6 +361,14 @@ class PlotGUI(QWidget):
     #         csv_fig.main()
     #     except:
     #         pass
+
+    def xChoice(self):
+        """
+        Allows user to input name of data column they'd like as their x axis for plotting
+        :return:
+        """
+        self.x_string = self.x.param('x axis', 'x axis').value()
+        self.changedX = True
 
     def plotAvg(self):
         """
@@ -524,8 +557,8 @@ class PlotGUI(QWidget):
 
             if is_number(self.start_x):  # selects part of data that occurs after the user-specified start x
                 start = float(self.start_x)
-                if start <= max(self.data[:, 0]):
-                    self.data = self.data[np.where(self.data[:, 0] >= start)]
+                if start <= max(self.data[:, self.x_index]):
+                    self.data = self.data[np.where(self.data[:, self.x_index] >= start)]
                 else:
                     QMessageBox.about(self, "Error", "Start x is larger than max x for file.")
                     self.start_x = "Default (x[0])"
@@ -600,8 +633,6 @@ class PlotGUI(QWidget):
 
             self.footerskip = len(strippedlines) - self.end_line
 
-        self.plotLine()
-
     def plotLine(self):
         """
         Recursive parametertree creation that depends on number of datatypes in file. Skips over the first data type
@@ -609,13 +640,13 @@ class PlotGUI(QWidget):
         :return:
         """
 
-        if self.file != self.current_file:
+        if (self.file != self.current_file) or self.changedX:
             self.child_list = []
             self.plot_show = {}
 
             for name in self.data_types:
                 name = name.rstrip('\n').strip(' ')
-                if self.data_types.index(name) != 0:
+                if self.data_types.index(name) != self.x_index:
                     self.child_list.append({'name': name, 'type': 'bool', 'value': True, 'tip': f"Plot {name} if "
                                                                                                 "selected"})
                     self.plot_show[name] = True
@@ -639,6 +670,8 @@ class PlotGUI(QWidget):
 
             self.tff.setParameters(self.l, showTop=False)
 
+            self.changedX = False
+
         for name in self.plot_show:
             self.plot_show[name] = self.l.param('Plot lines', name).value()
 
@@ -650,19 +683,30 @@ class PlotGUI(QWidget):
 
         xset = False
 
+        text_data_types = [ii.lower() for ii in self.data_types]
+        if self.x_string.strip(' ').lower() in text_data_types:
+            self.x_index = self.data_types.index(self.x_string.strip(' ').title())
+        else:
+            self.x_index = 0
+        self.x.param('x axis', 'x axis').setValue(self.data_types[self.x_index])
+
+        self.plotLine()
+
         if self.real_axes:  # handles cases of user input axes types
 
             if "xlog" in self.each_axis and "ylog" in self.each_axis:
-                for ii in range(1, len(self.data_types)):
-                    self.data[:, ii] = np.abs(self.data[:, ii])
+                for ii in range(0, len(self.data_types)):
+                    if ii != self.x_index:
+                        self.data[:, ii] = np.abs(self.data[:, ii])
                 self.pl.setLogMode(True, True)
                 xset = True
             elif "xlog" in self.each_axis:
                 self.pl.setLogMode(True, False)
                 xset = True
             elif "ylog" in self.each_axis:
-                for ii in range(1, len(self.data_types)):
-                    self.data[:, ii] = np.abs(self.data[:, ii])
+                for ii in range(0, len(self.data_types)):
+                    if ii != self.x_index:
+                        self.data[:, ii] = np.abs(self.data[:, ii])
                 self.pl.setLogMode(False, True)
             else:
                 self.pl.setLogMode(False, False)
@@ -675,40 +719,41 @@ class PlotGUI(QWidget):
                     start = -1
 
                 if start > 0:  # should catch string start times as well as negatives
-                    self.data = self.data[np.where(self.data[:, 0] > start)]
+                    self.data = self.data[np.where(self.data[:, self.x_index] > start)]
                     self.start_x = self.data[np.where(
-                        self.data[:, 0] > start)][0][0]
+                        self.data[:, self.x_index] > start)][0][0]
                     self.p.param('Plot options', 'Start x').setValue(
                         np.round(self.start_x, 8))
                 else:
-                    self.data = self.data[np.where(self.data[:, 0] > 0)]
+                    self.data = self.data[np.where(self.data[:, self.x_index] > 0)]
                     self.start_x = self.data[np.where(
-                        self.data[:, 0] > 0)][0][0]
+                        self.data[:, self.x_index] > 0)][0][0]
                     QMessageBox.about(self, "Error", "Can't have negatives or zeros for log axis.")
                     self.p.param('Plot options', 'Start x').setValue(
                         "Default (x[0])")
 
         if self.plot_normal:  # normalizes data to 1
-            for ii in range(1, len(self.data_types)):
-                if np.max(np.absolute(self.data[:, ii])) == 0:
-                    pass
-                else:
-                    self.data[:, ii] = self.data[:, ii] / \
-                                       np.max(np.absolute(self.data[:, ii]))
+            for ii in range(0, len(self.data_types)):
+                if ii != self.x_index:
+                    if np.max(np.absolute(self.data[:, ii])) == 0:
+                        pass
+                    else:
+                        self.data[:, ii] = self.data[:, ii] / \
+                                           np.max(np.absolute(self.data[:, ii]))
 
             self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
             self.pl.setLabel('left', 'Magnitude')
 
         if is_number(self.end_x) and not is_number(self.start_x):  # exception handling for start and end time cases
-            if float(self.end_x) > np.min(self.data[:, 0]):
-                self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
+            if float(self.end_x) > np.min(self.data[:, self.x_index]):
+                self.data = self.data[np.where(self.data[:, self.x_index] <= float(self.end_x))]
             else:
                 QMessageBox.about(self, "Error", "End x is less than default Start x")
                 self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
         elif is_number(self.end_x) and is_number(self.start_x):
             if float(self.end_x) > float(self.start_x):
-                self.data = self.data[np.where(self.data[:, 0] <= float(self.end_x))]
+                self.data = self.data[np.where(self.data[:, self.x_index] <= float(self.end_x))]
             else:
                 QMessageBox.about(self, "Error", "End x is less than Start x")
                 self.p.param('Plot options', 'End x').setValue("Default (x[-1])")
@@ -718,8 +763,8 @@ class PlotGUI(QWidget):
                 if self.plot_show[key]:
                     ii = self.data_types.index(key)
 
-                    if ii != 0:
-                        self.pl.plot(self.data[:, 0],
+                    if ii != self.x_index:
+                        self.pl.plot(self.data[:, self.x_index],
                                      self.data[:, ii],
                                      pen=ii + self.plot_count,
                                      name=self.data_types[ii].rstrip('\n') + "--" + self.plot_name)
@@ -730,8 +775,8 @@ class PlotGUI(QWidget):
                 if self.plot_show[key]:
                     ii = self.data_types.index(key)
 
-                    if ii != 0:
-                        self.pl.plot(self.data[:, 0],
+                    if ii != self.x_index:
+                        self.pl.plot(self.data[:, self.x_index],
                                      self.data[:, ii],
                                      pen=ii,
                                      name=self.data_types[ii].rstrip('\n'))
@@ -739,7 +784,7 @@ class PlotGUI(QWidget):
 
         self.pl.enableAutoRange()
 
-        self.pl.setLabel('bottom', self.data_types[0])
+        self.pl.setLabel('bottom', self.data_types[self.x_index])
 
         self.pl.show()
 
@@ -750,11 +795,10 @@ class PlotGUI(QWidget):
             self.close()
         elif e.key() == QtCore.Qt.Key_Enter:
             self.makePlot()
-        elif e.key(
-        ) == 16777220:  # enter for Mac, will need to find out enter for windows
+        elif e.key() == 16777220:  # enter for Mac, will need to find out enter for windows
             self.makePlot()
-        else:
-            QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
+        # else:
+        #     QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
 
 
 def main():
