@@ -619,6 +619,13 @@ class PlotGUI(QWidget):
                                                                                                 "selected"})
                     self.plot_show[name] = True
 
+            # self.start_x = "Default (x[0])"  # this part will reset x axis if a new file is chosen. Not sure yet if
+            # that's what I want
+            # self.end_x = "Default (x[:])"
+            #
+            # self.p.param('Plot options', 'Start x').setValue(self.start_x)
+            # self.p.param('Plot options', 'End x').setValue(self.end_x)
+
             self.plotlines = [{
                 'name': 'Plot lines',
                 'type': 'group',
@@ -633,9 +640,6 @@ class PlotGUI(QWidget):
 
         for name in self.plot_show:
             self.plot_show[name] = self.l.param('Plot lines', name).value()
-
-            # self.l.param('Plot lines',
-            #              name).sigStateChanged.connect(lambda: self.plotShow(name))
 
     def updatePlot(self):
         """
