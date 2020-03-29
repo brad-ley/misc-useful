@@ -555,14 +555,14 @@ class PlotGUI(QWidget):
 
                 self.data = datalist / count
 
-            if is_number(self.start_x):  # selects part of data that occurs after the user-specified start x
-                start = float(self.start_x)
-                if start <= max(self.data[:, self.x_index]):
-                    self.data = self.data[np.where(self.data[:, self.x_index] >= start)]
-                else:
-                    QMessageBox.about(self, "Error", "Start x is larger than max x for file.")
-                    self.start_x = "Default (x[0])"
-                self.p.param('Plot options', 'Start x').setValue(self.start_x)
+            # if is_number(self.start_x):  # selects part of data that occurs after the user-specified start x
+            #     start = float(self.start_x)
+            #     if start <= max(self.data[:, self.x_index]):
+            #         self.data = self.data[np.where(self.data[:, self.x_index] >= start)]
+            #     else:
+            #         QMessageBox.about(self, "Error", "Start x is larger than max x for file.")
+            #         self.start_x = "Default (x[0])"
+            #     self.p.param('Plot options', 'Start x').setValue(self.start_x)
 
             self.plot_name = self.file.split('/')[-1].split('.')[0].replace(
                 '_', ' ')
@@ -684,10 +684,17 @@ class PlotGUI(QWidget):
         xset = False
 
         text_data_types = [ii.lower() for ii in self.data_types]
-        if self.x_string.strip(' ').lower() in text_data_types:
-            self.x_index = self.data_types.index(self.x_string.strip(' ').title())
-        else:
+        found_idx = False
+
+        for ii in range(len(text_data_types)):
+            if self.x_string.strip(' ').lower() in text_data_types[ii]:
+                self.x_index = ii
+                found_idx = True
+                break
+
+        if not found_idx:
             self.x_index = 0
+
         self.x.param('x axis', 'x axis').setValue(self.data_types[self.x_index])
 
         self.plotLine()
@@ -718,19 +725,30 @@ class PlotGUI(QWidget):
                 except ValueError:
                     start = -1
 
-                if start > 0:  # should catch string start times as well as negatives
-                    self.data = self.data[np.where(self.data[:, self.x_index] > start)]
-                    self.start_x = self.data[np.where(
-                        self.data[:, self.x_index] > start)][0][0]
-                    self.p.param('Plot options', 'Start x').setValue(
-                        np.round(self.start_x, 8))
+                if start > 0:  # should pass string start times as well as negatives
+                    try:
+                        if all(self.data[:, self.x_index]) <= 0:
+                            self.data[:, self.x_index] = np.abs(self.data[:, self.x_index])
+                        self.data = self.data[np.where(self.data[:, self.x_index] >= start)]
+                        self.start_x = self.data[np.where(
+                            self.data[:, self.x_index] >= start)][0][self.x_index]
+                        self.p.param('Plot options', 'Start x').setValue(
+                            np.round(self.start_x, 8))
+                    except IndexError:
+                        QMessageBox.about(self, "Error", "All x values are zero so this can't be put on a log plot.")
                 else:
-                    self.data = self.data[np.where(self.data[:, self.x_index] > 0)]
-                    self.start_x = self.data[np.where(
-                        self.data[:, self.x_index] > 0)][0][0]
-                    QMessageBox.about(self, "Error", "Can't have negatives or zeros for log axis.")
-                    self.p.param('Plot options', 'Start x').setValue(
-                        "Default (x[0])")
+                    try:
+                        self.data_prev = self.data
+                        if all(self.data[:, self.x_index]) <= 0:
+                            self.data[:, self.x_index] = np.abs(self.data[:, self.x_index])
+                        self.data = self.data[np.where(self.data[:, self.x_index] > 0)]
+                        self.start_x = self.data[np.where(self.data[:, self.x_index] > 0)][0][self.x_index]
+                        if len(self.data[:, self.x_index]) != len(self.data_prev[:, self.x_index]):
+                            QMessageBox.about(self, "Error", "Can't have negatives or zeros for log axis.")
+                            self.p.param('Plot options', 'Start x').setValue(
+                                self.start_x)
+                    except IndexError:
+                        QMessageBox.about(self, "Error", "All x values are zero so this can't be put on a lot plot.")
 
         if self.plot_normal:  # normalizes data to 1
             for ii in range(0, len(self.data_types)):
@@ -799,7 +817,15 @@ class PlotGUI(QWidget):
             self.makePlot()
         # else:
         #     QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
-
+        
+        
+# class PlotExport(QWidget):
+#     """
+#     Subwindow od plotting app -- used for matplotlib figure creation and export
+#     """
+#     def __init__(self, data):  # on button push in parent class, open PlotExport child. Pass self.data_types,
+#         # self.plot_show, self.data
+#         super().__init__()
 
 def main():
     app = QApplication(sys.argv)
