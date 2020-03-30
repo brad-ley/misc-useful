@@ -209,9 +209,13 @@ class MainWindow(QMainWindow):
 
         if 'x' in log_set:
             self.x_mode = True
+        else:
+            self.x_mode = False
 
         if 'y' in log_set:
             self.y_mode = True
+        else:
+            self.y_mode = False
 
     def setXax(self):
         if self.params.param('Plot options', 'X-axis:').value() != "X":
@@ -311,22 +315,6 @@ class MainWindow(QMainWindow):
             except AttributeError:
                 pass
 
-        if self.y_mode:
-            self.plot.axes.set_yscale('log')
-        else:
-            self.plot.axes.ticklabel_format(axis='y',
-                                            style='sci',
-                                            scilimits=(-2, 2),
-                                            useMathText=True)
-
-        if self.x_mode:
-            self.plot.axes.set_xscale('log')
-        else:
-            self.plot.axes.ticklabel_format(axis='x',
-                                            style='sci',
-                                            scilimits=(-2, 2),
-                                            useMathText=True)
-
         # self.plot.axes.tight_layout()
 
         if self.labels_entered and not self.user_labels:
@@ -348,41 +336,25 @@ class MainWindow(QMainWindow):
             for ii in range(len(self.data[0, :]) - 1):
                 self.plot.axes.plot(self.data[:, 0], self.data[:, ii + 1])
 
-        # print(self.plot.axes.legend.get_window_extent())
+        if self.y_mode:
+            self.plot.axes.set_yscale('log')
+        else:
+            self.plot.axes.ticklabel_format(axis='y',
+                                            style='sci',
+                                            scilimits=(-2, 2),
+                                            useMathText=True)
+
+        if self.x_mode:
+            self.plot.axes.set_xscale('log')
+        else:
+            self.plot.axes.ticklabel_format(axis='x',
+                                            style='sci',
+                                            scilimits=(-2, 2),
+                                            useMathText=True)
 
         self.plot.draw()
 
     def exportPNG(self):
-        # plt.figure()
-        #
-        # if self.ylabel_entered:
-        #     plt.ylabel(self.yax)
-        # if self.xlabel_entered:
-        #     plt.xlabel(self.xax)
-        # if self.title_entered:
-        #     plt.title(self.title)
-        # if self.yticks_entered:
-        #     plt.yticks(self.yticks)
-        # if self.xticks_entered:
-        #     plt.xticks(self.xticks)
-        # if self.y_mode:
-        #     plt.yscale('log')
-        # else:
-        #     plt.ticklabel_format(axis='y', style='sci', scilimits=(3, 0))
-        # if self.x_mode:
-        #     plt.xscale('log')
-        # else:
-        #     plt.ticklabel_format(axis='x', style='sci', scilimits=(3, 0))
-        #
-        # # plt.tight_layout()
-        #
-        # if self.labels_entered:
-        #     plt.legend()
-        #     for ii in range(len(self.data[0, :]) - 1):
-        #         plt.plot(self.data[:, 0], self.data[:, ii + 1], label=self.labels[ii])
-        # else:
-        #     for ii in range(len(self.data[0, :]) - 1):
-        #         plt.plot(self.data[:, 0], self.data[:, ii + 1])
 
         self.plot.fig.savefig('.'.join(self.file.split('.')[:-1]) + '.png')
 
