@@ -6,7 +6,6 @@ in window for final export to png
 import sys
 
 import matplotlib as mplb
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -15,6 +14,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from pyqtgraph import *
 from pyqtgraph.parametertree import *
+from cycler import cycler
 
 mplb.use('QT5Agg')
 
@@ -40,6 +40,7 @@ class MainWindow(QMainWindow):
         self.labels = "Default"
         self.font = 14
         self.x_mode = self.y_mode = False
+        self.bw = False
 
         self.xticks_entered = self.yticks_entered = self.xlabel_entered = \
             self.ylabel_entered = self.title_entered = self.user_labels =\
@@ -51,16 +52,17 @@ class MainWindow(QMainWindow):
             'figure.autolayout': True,
             'font.size': self.font
         })
-        plt.rcParams.update({
-            'figure.autolayout': True,
-            'font.size': self.font
-        })
 
         self.initUI()
         self.show()
 
     def initUI(self):
         self.plot = MplCanvas(self, width=5, height=4, dpi=100)
+
+        self.default_cycle = mplb.rcParams['axes.prop_cycle']
+        co_cyc = cycler(c=['#000000', '#737373', '#262626', '#999999', '#4d4d4d'])
+        lin_cyc = cycler('ls', ['-', '--', '-.'])
+        self.new_cycle = lin_cyc * co_cyc
 
         self.entries = [{
             'name':
@@ -115,7 +117,12 @@ class MainWindow(QMainWindow):
                 'type': 'str',
                 'value': self.font,
                 'tip': 'Standard for figures is 16'
-            }, {
+            }, {'name': 'B & W',
+                'type': 'bool',
+                'value': self.bw,
+                'tip': 'Creates plot with grayscale on'
+                },
+                {
                 'name': 'Update plot',
                 'type': 'action'
             }, {
@@ -156,6 +163,7 @@ class MainWindow(QMainWindow):
         self.params.param('Plot options',
                           'Font size:').sigValueChanged.connect(
                               self.setFontSize)
+        self.params.param('Plot options', 'B & W').sigValueChanged.connect(self.setBW)
 
         # self.toolbar = NavigationToolbar(sc, self)
 
@@ -168,6 +176,14 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
         # self.showMaximized()
+
+    def setBW(self):
+        self.bw = self.params.param('Plot options', 'B & W').value()
+
+        if self.bw:
+            mplb.rcParams.update({'axes.prop_cycle': self.new_cycle})
+        else:
+            mplb.rcParams.update({'axes.prop_cycle': self.default_cycle})
 
     def setYTicks(self):
         if self.params.param('Plot options', 'Y ticks:').value() != "Default":
@@ -257,7 +273,6 @@ class MainWindow(QMainWindow):
             self.font = int(
                 self.params.param('Plot options', 'Font size:').value())
             mplb.rcParams.update({'font.size': self.font})
-            plt.rcParams.update({'font.size': self.font})
         except ValueError:
             self.params.param('Plot options', 'Font size:').setValue(self.font)
 
