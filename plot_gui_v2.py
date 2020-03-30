@@ -592,6 +592,9 @@ class PlotGUI(QWidget):
                 "This is not a comma-separated file and the correct "
                 "delimiter was not specified.")
 
+        except FileNotFoundError:
+            QMessageBox.about(self, "Error", "No file chosen. Can't update.")
+
         self.p.param('Plot options', 'Delimiter').setValue(self.plot_delimiter)
 
     def getLines(self):
