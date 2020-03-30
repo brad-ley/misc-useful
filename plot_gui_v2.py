@@ -571,8 +571,7 @@ class PlotGUI(QWidget):
                 self.plot_name = ' '.join(self.plot_name.split(' ')[:-1])
 
                 if self.plot_avg:
-                    self.plot_name = ' '.join(
-                        self.plot_name.split(' ')[:-1]) + 'average'
+                    self.plot_name = self.plot_name + ' average'
 
             elif self.plot_avg:
                 self.plot_title = ' '.join(
@@ -698,6 +697,13 @@ class PlotGUI(QWidget):
         self.x.param('x axis', 'x axis').setValue(self.data_types[self.x_index])
 
         self.plotLine()
+
+        if is_number(self.start_x):
+            if float(self.start_x) < np.max(self.data[:, self.x_index]):
+                self.data = self.data[np.where(self.data[:, self.x_index] >= float(self.start_x))]
+            else:
+                QMessageBox.about(self, "Error", "Start x is greater than max x.")
+                self.p.param('Plot options', 'Start x').setValue("Default (x[0])")
 
         if self.real_axes:  # handles cases of user input axes types
 
