@@ -7,7 +7,7 @@ Users can stack plots, average similarly-named files, create multiple plots in U
 Now has a feature that opens a subwindow for exporting the created plot's csv to a matplotlib png.
 
 
-## csv_fig (This is now deprecated)
+## csv_fig (deprecated)
 Not great implementation, but user can create a nice .png figure from the exported .csv through plot_gui. Requires easygui.
 
 ### installation
