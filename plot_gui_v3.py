@@ -527,12 +527,20 @@ class PlotGUI(QWidget):
 
                 self.getLines()
 
-            self.data = pd.read_csv(self.file,
-                                    sep=self.plot_delimiter,
-                                    header=self.begin_line - 1,
-                                    skipfooter=self.footerskip,
-                                    engine='python',
-                                    index_col=False).to_numpy()
+            if not self.data_types:  # used to make index column if file doesn't have it
+                data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
+                self.data = np.zeros((len(data), 2))
+                self.data[:, 0] = np.array(list(range(len(data))))
+                self.data[:, 1] = data
+                self.data_types = ['Index', 'Value']
+
+            else:
+                self.data = pd.read_csv(self.file,
+                                        sep=self.plot_delimiter,
+                                        header=self.begin_line - 1,
+                                        skipfooter=self.footerskip,
+                                        engine='python',
+                                        index_col=False).to_numpy()
 
             if self.plot_avg:  # handles averaging stupidly... just adds columns and divides by number of files
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -616,11 +624,14 @@ class PlotGUI(QWidget):
                 pass
             else:
                 self.begin_line = strippedlines.index(line)
-                self.data_type = self.begin_line - 1
-                self.data_types = [
-                    ii.rstrip('\n').strip(' ') for ii in strippedlines[
-                        self.data_type].split(self.plot_delimiter)
-                ]
+                if self.begin_line == 0:
+                    self.data_types = False
+                else:
+                    self.data_type = self.begin_line - 1
+                    self.data_types = [
+                        ii.rstrip('\n').strip(' ') for ii in strippedlines[
+                            self.data_type].split(self.plot_delimiter)
+                    ]
 
                 break
 
