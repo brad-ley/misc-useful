@@ -529,10 +529,12 @@ class PlotGUI(QWidget):
 
             if not self.data_types:  # used to make index column if file doesn't have it
                 data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
-                self.data = np.zeros((len(data), 2))
-                self.data[:, 0] = np.array(list(range(len(data))))
-                self.data[:, 1] = data
-                self.data_types = ['Index', 'Value']
+                # self.data = np.zeros((len(data), 2))
+                # self.data[:, 0] = np.array(list(range(len(data))))
+                # self.data[:, 1] = data
+                self.data = np.hstack((np.reshape(np.array(list(range(len(data)))), (len(data), 1)),
+                                       data))  # numerical index for x axis
+                self.data_types = ['Index'] + [f"Value{ii}" for ii in range(np.shape(data)[1])]
 
             else:
                 self.data = pd.read_csv(self.file,
