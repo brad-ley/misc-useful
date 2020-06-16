@@ -23,6 +23,7 @@ import matplotlib as mplb
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from cycler import cycler
+
 """
 TODO
 [X] Add comments
@@ -370,12 +371,6 @@ class PlotGUI(QWidget):
 
         self.l.param('Plot lines', name).setValue(self.plot_show[name])
 
-    # def makePNG(self):
-    #     try:
-    #         csv_fig.main()
-    #     except:
-    #         pass
-
     def selectAll(self):
         """
         Selects all plots for easier choosing of one line
@@ -438,13 +433,6 @@ class PlotGUI(QWidget):
         else:
             self.plot_stack = False
         self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
-
-    # def plotName(self):
-    #     if self.plot_name is False:
-    #         self.plot_name = True
-    #     else:
-    #         self.plot_name = False
-    #     self.p.param('Plot options', 'Use filename as name').setValue(self.plot_name)
 
     def startX(self):
         """
@@ -550,7 +538,7 @@ class PlotGUI(QWidget):
                 try:
                     data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
                     self.data = np.hstack((np.reshape(np.array(list(range(len(data)))), (len(data), 1)),
-                                       data))  # numerical index for x axis
+                                           data))  # numerical index for x axis
                     self.data_types = ['Index'] + [f"Value{ii}" for ii in range(np.shape(data)[1])]
                 except OSError:
                     QMessageBox.about(self, "Error", "No file chosen. Reverting to previous file.")
@@ -558,7 +546,7 @@ class PlotGUI(QWidget):
                     self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
                     data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
                     self.data = np.hstack((np.reshape(np.array(list(range(len(data)))), (len(data), 1)),
-                                       data))  # numerical index for x axis
+                                           data))  # numerical index for x axis
                     self.data_types = ['Index'] + [f"Value{ii}" for ii in range(np.shape(data)[1])]
 
             else:
@@ -621,9 +609,9 @@ class PlotGUI(QWidget):
 
             self.updatePlot()
 
-        except AttributeError:
-            QMessageBox.about(self, "Error",
-                              "That file did not parse correctly.")
+        # except AttributeError:
+        #     QMessageBox.about(self, "Error",
+        #                       "That file did not parse correctly.")
 
         except ValueError:
             QMessageBox.about(
@@ -907,7 +895,7 @@ class MainWindow(QMainWindow):
         self.bw = False
 
         self.xticks_entered = self.yticks_entered = self.xlabel_entered = \
-            self.ylabel_entered = self.title_entered = self.user_labels =\
+            self.ylabel_entered = self.title_entered = self.user_labels = \
             False
 
         self.labels_entered = True
@@ -930,9 +918,9 @@ class MainWindow(QMainWindow):
 
         self.entries = [{
             'name':
-            'Plot options',
+                'Plot options',
             'type':
-            'group',
+                'group',
             'children': [{
                 'name': 'Choose file',
                 'type': 'action',
@@ -987,12 +975,12 @@ class MainWindow(QMainWindow):
                 'tip': 'Creates plot with grayscale on'
                 },
                 {
-                'name': 'Update plot',
-                'type': 'action'
-            }, {
-                'name': 'Export png',
-                'type': 'action'
-            }]
+                    'name': 'Update plot',
+                    'type': 'action'
+                }, {
+                    'name': 'Export png',
+                    'type': 'action'
+                }]
         }]
 
         self.params = Parameter.create(name='entries',
@@ -1023,10 +1011,10 @@ class MainWindow(QMainWindow):
                           'Log:').sigValueChanged.connect(self.setLog)
         self.params.param('Plot options',
                           'Plot labels:').sigValueChanged.connect(
-                              self.setLabels)
+            self.setLabels)
         self.params.param('Plot options',
                           'Font size:').sigValueChanged.connect(
-                              self.setFontSize)
+            self.setFontSize)
         self.params.param('Plot options', 'B & W').sigValueChanged.connect(self.setBW)
 
         # self.toolbar = NavigationToolbar(sc, self)
@@ -1148,7 +1136,7 @@ class MainWindow(QMainWindow):
         """
         self.file = QFileDialog.getOpenFileName(
             self, "Plot file", "", "CSV (*.csv);;Data Files (*.dat);;"
-            "Text Files (*.txt)")[0]
+                                   "Text Files (*.txt)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
@@ -1165,7 +1153,7 @@ class MainWindow(QMainWindow):
     def updatePlot(self):
         try:
             self.data = pd.read_csv(self.file, engine='python',
-                                index_col=False).to_numpy()
+                                    index_col=False).to_numpy()
 
             self.plot.axes.cla()
 
