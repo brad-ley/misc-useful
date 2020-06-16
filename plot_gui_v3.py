@@ -1,7 +1,7 @@
 """
 This opens a gui and lets the user update with their chosen .dat
 """
-# !/usr/bin/python
+# !/opt/anaconda3/bin/python
 
 # need to make sure when creating app that I use python3 because that is in usr/local/bin, which is where my local
 # python dist and py2app are located
@@ -18,12 +18,18 @@ from PyQt5.QtWidgets import *
 from pyqtgraph import *
 from pyqtgraph.parametertree import *
 
-# import plt_fig
+# for export class
+import matplotlib as mplb
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+from cycler import cycler
+
 """
 TODO
 [X] Add comments
-[ ] Allow user to select which column they'd like as their x axis -- not sure if worth doing because it will take 
-some refactoring and the columns can just be rearranged in vim
+[X] Allow user to select which column they'd like as their x axis
+[ ] Add functionality to transpose data matrix
+[X] Deselect all when plotting
 """
 
 
@@ -69,6 +75,7 @@ class PlotGUI(QWidget):
         self.changedX = False
         self.possible_axis = {"xlog", "ylog", "xlin", "ylin"}
         self.real_axes = False
+        self.select_all = True
         self.initUI()
 
         self.show()
@@ -86,6 +93,12 @@ class PlotGUI(QWidget):
             'type':
                 'group',
             'children': [
+                {
+                    'name': 'Select all',
+                    'type': 'bool',
+                    'value': self.select_all,
+                    'tip': "Turns off all plot lines"
+                },
                 {
                     'name': 'Plot multiple',
                     'type': 'bool',
@@ -166,10 +179,10 @@ class PlotGUI(QWidget):
                     'type': 'str',
                     'value': self.file
                 },
-                # {
-                #     'name': 'Create png',
-                #     'type': 'action'
-                # }
+                {
+                    'name': 'Create png',
+                    'type': 'action'
+                }
             ]
         }]
 
@@ -253,8 +266,10 @@ class PlotGUI(QWidget):
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
         self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
-        # self.f.param('File', 'Create png').sigActivated.connect(self.makePNG)
+        self.f.param('File', 'Create png').sigActivated.connect(self.exportPNG)
 
+        self.p.param('Plot options',
+                     'Select all').sigValueChanged.connect(self.selectAll)
         self.p.param('Plot options',
                      'Plot multiple').sigStateChanged.connect(self.plotMult)
         self.p.param('Plot options',
@@ -279,8 +294,8 @@ class PlotGUI(QWidget):
         :return:
         """
         self.file = QFileDialog.getOpenFileName(
-            self, "Plot file", "", "Data Files (*.dat);;CSV (*.csv);;"
-                                   "Text Files (*.txt);;Python Files (*.py)")[0]
+            self, "Plot file", "", "Text Files (*.txt);;Data Files (*.dat);;"
+                                   "CSV (*.csv);;Python Files (*.py)")[0]
         try:
             fileopen = open(self.file, 'r')
             self.prev_file = self.file
@@ -356,11 +371,14 @@ class PlotGUI(QWidget):
 
         self.l.param('Plot lines', name).setValue(self.plot_show[name])
 
-    # def makePNG(self):
-    #     try:
-    #         csv_fig.main()
-    #     except:
-    #         pass
+    def selectAll(self):
+        """
+        Selects all plots for easier choosing of one line
+        :return:
+        """
+        for name in self.plot_show:
+            self.plot_show[name] = self.p.param('Plot options', 'Select all').value()
+            self.l.param('Plot lines', name).setValue(self.plot_show[name])
 
     def xChoice(self):
         """
@@ -415,13 +433,6 @@ class PlotGUI(QWidget):
         else:
             self.plot_stack = False
         self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
-
-    # def plotName(self):
-    #     if self.plot_name is False:
-    #         self.plot_name = True
-    #     else:
-    #         self.plot_name = False
-    #     self.p.param('Plot options', 'Use filename as name').setValue(self.plot_name)
 
     def startX(self):
         """
@@ -523,12 +534,28 @@ class PlotGUI(QWidget):
 
                 self.getLines()
 
-            self.data = pd.read_csv(self.file,
-                                    sep=self.plot_delimiter,
-                                    header=self.begin_line - 1,
-                                    skipfooter=self.footerskip,
-                                    engine='python',
-                                    index_col=False).to_numpy()
+            if not self.data_types:  # used to make index column if file doesn't have it
+                try:
+                    data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
+                    self.data = np.hstack((np.reshape(np.array(list(range(len(data)))), (len(data), 1)),
+                                           data))  # numerical index for x axis
+                    self.data_types = ['Index'] + [f"Value{ii}" for ii in range(np.shape(data)[1])]
+                except OSError:
+                    QMessageBox.about(self, "Error", "No file chosen. Reverting to previous file.")
+                    self.file = self.current_file
+                    self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
+                    data = np.loadtxt(self.file, delimiter=self.plot_delimiter)
+                    self.data = np.hstack((np.reshape(np.array(list(range(len(data)))), (len(data), 1)),
+                                           data))  # numerical index for x axis
+                    self.data_types = ['Index'] + [f"Value{ii}" for ii in range(np.shape(data)[1])]
+
+            else:
+                self.data = pd.read_csv(self.file,
+                                        sep=self.plot_delimiter,
+                                        header=self.begin_line - 1,
+                                        skipfooter=self.footerskip,
+                                        engine='python',
+                                        index_col=False).to_numpy()
 
             if self.plot_avg:  # handles averaging stupidly... just adds columns and divides by number of files
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -612,11 +639,14 @@ class PlotGUI(QWidget):
                 pass
             else:
                 self.begin_line = strippedlines.index(line)
-                self.data_type = self.begin_line - 1
-                self.data_types = [
-                    ii.rstrip('\n').strip(' ') for ii in strippedlines[
-                        self.data_type].split(self.plot_delimiter)
-                ]
+                if self.begin_line == 0:
+                    self.data_types = False
+                else:
+                    self.data_type = self.begin_line - 1
+                    self.data_types = [
+                        ii.rstrip('\n').strip(' ') for ii in strippedlines[
+                            self.data_type].split(self.plot_delimiter)
+                    ]
 
                 break
 
@@ -649,9 +679,10 @@ class PlotGUI(QWidget):
             for name in self.data_types:
                 name = name.rstrip('\n').strip(' ')
                 if self.data_types.index(name) != self.x_index:
-                    self.child_list.append({'name': name, 'type': 'bool', 'value': True, 'tip': f"Plot {name} if "
-                                                                                                "selected"})
-                    self.plot_show[name] = True
+                    self.child_list.append({'name': name, 'type': 'bool', 'value': self.p.param('Plot options',
+                                                                                                'Select all').value(),
+                                            'tip': f"Plot {name} if selected"})
+                    self.plot_show[name] = self.p.param('Plot options', 'Select all').value()
 
             # self.start_x = "Default (x[0])"  # this part will reset x axis if a new file is chosen. Not sure yet if
             # that's what I want
@@ -826,15 +857,453 @@ class PlotGUI(QWidget):
             self.makePlot()
         # else:
         #     QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
-        
-        
-# class PlotExport(QWidget):
-#     """
-#     Subwindow od plotting app -- used for matplotlib figure creation and export
-#     """
-#     def __init__(self, data):  # on button push in parent class, open PlotExport child. Pass self.data_types,
-#         # self.plot_show, self.data
-#         super().__init__()
+
+    def exportPNG(self):
+        window = MainWindow(self)
+
+
+"""
+This allows a user to import a csv file from plot_gui app export and the user can live-update their matplotlib plot
+in window for final export to png
+"""
+
+mplb.use('QT5Agg')
+
+
+class MplCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.file = "Filename"
+        self.current_file = self.file
+        self.title = "Title"
+        self.yax = "Y"
+        self.xax = "X"
+        self.yticks = "Default"
+        self.xticks = "Default"
+        self.log = "x, y, or 'x, y'"
+        self.labels = "Default"
+        self.font = 14
+        self.x_mode = self.y_mode = False
+        self.bw = False
+
+        self.xticks_entered = self.yticks_entered = self.xlabel_entered = \
+            self.ylabel_entered = self.title_entered = self.user_labels = \
+            False
+
+        self.labels_entered = True
+
+        mplb.rcParams.update({
+            'figure.autolayout': True,
+            'font.size': self.font
+        })
+
+        self.initUI()
+        self.show()
+
+    def initUI(self):
+        self.plot = MplCanvas(self, width=5, height=4, dpi=100)
+
+        self.default_cycle = mplb.rcParams['axes.prop_cycle']
+        co_cyc = cycler(c=['#000000', '#737373', '#262626', '#999999', '#4d4d4d'])
+        lin_cyc = cycler('ls', ['-', '--', '-.'])
+        self.new_cycle = lin_cyc * co_cyc
+
+        self.entries = [{
+            'name':
+                'Plot options',
+            'type':
+                'group',
+            'children': [{
+                'name': 'Choose file',
+                'type': 'action',
+            }, {
+                'name': 'File:',
+                'type': 'str',
+                'value': self.file,
+                'tip': 'Name of chosen file'
+            }, {
+                'name': 'Title:',
+                'type': 'str',
+                'value': self.title,
+                'tip': 'Title of plot window'
+            }, {
+                'name': 'Y-axis:',
+                'type': 'str',
+                'value': self.yax,
+                'tip': 'Y-axis label'
+            }, {
+                'name': 'Y ticks:',
+                'type': 'str',
+                'value': self.yticks,
+                'tip': 'Y-axis ticks'
+            }, {
+                'name': 'X-axis:',
+                'type': 'str',
+                'value': self.xax,
+                'tip': 'X-axis label'
+            }, {
+                'name': 'X ticks:',
+                'type': 'str',
+                'value': self.xticks,
+                'tip': 'X-axis ticks'
+            }, {
+                'name': 'Log:',
+                'type': 'str',
+                'value': self.log,
+                'tip': "x, y, or 'x, y'"
+            }, {
+                'name': 'Plot labels:',
+                'type': 'str',
+                'value': self.labels,
+                'tip': 'Comma-separated legend entries'
+            }, {
+                'name': 'Font size:',
+                'type': 'str',
+                'value': self.font,
+                'tip': 'Standard for figures is 16'
+            }, {'name': 'B & W',
+                'type': 'bool',
+                'value': self.bw,
+                'tip': 'Creates plot with grayscale on'
+                },
+                {
+                    'name': 'Update plot',
+                    'type': 'action'
+                }, {
+                    'name': 'Export png',
+                    'type': 'action'
+                }]
+        }]
+
+        self.params = Parameter.create(name='entries',
+                                       type='group',
+                                       children=self.entries)
+
+        self.tree = ParameterTree()
+        self.tree.setParameters(self.params, showTop=False)
+        self.tree.setWindowTitle('Plot options')
+
+        self.params.param('Plot options',
+                          'Choose file').sigActivated.connect(self.chooseFile)
+        self.params.param('Plot options',
+                          'Update plot').sigActivated.connect(self.updatePlot)
+        self.params.param('Plot options',
+                          'Export png').sigActivated.connect(self.exportPNG)
+        self.params.param('Plot options',
+                          'Title:').sigValueChanged.connect(self.setTitle)
+        self.params.param('Plot options',
+                          'Y-axis:').sigValueChanged.connect(self.setYax)
+        self.params.param('Plot options',
+                          'Y ticks:').sigValueChanged.connect(self.setYTicks)
+        self.params.param('Plot options',
+                          'X-axis:').sigValueChanged.connect(self.setXax)
+        self.params.param('Plot options',
+                          'X ticks:').sigValueChanged.connect(self.setXTicks)
+        self.params.param('Plot options',
+                          'Log:').sigValueChanged.connect(self.setLog)
+        self.params.param('Plot options',
+                          'Plot labels:').sigValueChanged.connect(
+            self.setLabels)
+        self.params.param('Plot options',
+                          'Font size:').sigValueChanged.connect(
+            self.setFontSize)
+        self.params.param('Plot options', 'B & W').sigValueChanged.connect(self.setBW)
+
+        # self.toolbar = NavigationToolbar(sc, self)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.tree, 2)
+        layout.addWidget(self.plot, 3)
+
+        # Create a placeholder widget to hold our toolbar and canvas.
+        widget = QWidget()
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+        # self.showMaximized()
+
+    def setBW(self):
+        self.bw = self.params.param('Plot options', 'B & W').value()
+
+        if self.bw:
+            mplb.rcParams.update({'axes.prop_cycle': self.new_cycle})
+        else:
+            mplb.rcParams.update({'axes.prop_cycle': self.default_cycle})
+
+    def setYTicks(self):
+        if self.params.param('Plot options', 'Y ticks:').value() != "Default":
+            if self.params.param('Plot options',
+                                 'Y ticks:').value() == (' ' or ''):
+                self.yticks = []
+                self.yticks_entered = True
+            else:
+                try:
+                    self.yticks = [
+                        float(ii.strip(' ')) for ii in self.params.param(
+                            'Plot options', 'Y ticks:').value().split(',')
+                    ]
+                    self.yticks_entered = True
+                except ValueError:
+                    self.params.param('Plot options',
+                                      'Y ticks:').setValue("Default")
+
+    def setXTicks(self):
+        if self.params.param('Plot options', 'X ticks:').value() != "Default":
+            if self.params.param('Plot options',
+                                 'X ticks:').value() == (' ' or ''):
+                self.xticks = []
+                self.xticks_entered = True
+            else:
+                try:
+                    self.xticks = [
+                        float(ii.strip(' ')) for ii in self.params.param(
+                            'Plot options', 'X ticks:').value().split(',')
+                    ]
+                    self.xticks_entered = True
+                except ValueError:
+                    self.params.param('Plot options',
+                                      'X ticks:').setValue("Default")
+
+    def setLog(self):
+        log = self.params.param('Plot options', 'Log:').value()
+        log_set = set([ii.strip(' ') for ii in log.split(',')])
+
+        if 'x' in log_set:
+            self.x_mode = True
+        else:
+            self.x_mode = False
+
+        if 'y' in log_set:
+            self.y_mode = True
+        else:
+            self.y_mode = False
+
+    def setXax(self):
+        if self.params.param('Plot options', 'X-axis:').value() != "X":
+            self.xax = self.params.param('Plot options', 'X-axis:').value()
+            self.xlabel_entered = True
+
+    def setYax(self):
+        if self.params.param('Plot options', 'Y-axis:').value() != "Y":
+            self.yax = self.params.param('Plot options', 'Y-axis:').value()
+            self.ylabel_entered = True
+
+    def setTitle(self):
+        if self.params.param('Plot options', 'Title:').value() != "Title":
+            self.title = self.params.param('Plot options', 'Title:').value()
+            self.title_entered = True
+
+    def setLabels(self):
+        self.labels = self.params.param('Plot options', 'Plot labels:').value()
+
+        if self.labels != "Default":
+            if self.labels == (' ' or ''):
+                self.labels_entered = False
+            else:
+                self.labels = [
+                    ii.strip(' ') for ii in self.params.param(
+                        'Plot options', 'Plot labels:').value().split(',')
+                ]
+                self.labels_entered = True
+                self.user_labels = True
+        else:
+            self.labels = "Default"
+            self.params.param('Plot options',
+                              'Plot labels:').setValue(self.labels)
+            self.labels_entered = True
+            self.user_labels = False
+
+    def setFontSize(self):
+        try:
+            self.font = int(
+                self.params.param('Plot options', 'Font size:').value())
+            mplb.rcParams.update({'font.size': self.font})
+        except ValueError:
+            self.params.param('Plot options', 'Font size:').setValue(self.font)
+
+    def chooseFile(self):
+        """
+        Opens dialog and returns filename for plotting. If filename isn't found, returns file for a file on bprice
+        computer... not super helpful for distribution and wi
+        :return:
+        """
+        self.file = QFileDialog.getOpenFileName(
+            self, "Plot file", "", "CSV (*.csv);;Data Files (*.dat);;"
+                                   "Text Files (*.txt)")[0]
+        try:
+            fileopen = open(self.file, 'r')
+            self.prev_file = self.file
+
+            self.lines = fileopen.readlines()
+            fileopen.close()
+
+        except FileNotFoundError:
+            self.file = r"No file selected"
+
+        self.params.param('Plot options',
+                          'File:').setValue(self.file.split('/')[-1])
+
+    def updatePlot(self):
+        try:
+            self.data = pd.read_csv(self.file, engine='python',
+                                    index_col=False).to_numpy()
+
+            self.plot.axes.cla()
+
+            if self.ylabel_entered:
+                self.plot.axes.set_ylabel(self.yax)
+                self.plot.axes.yaxis.label.set_fontsize(self.font)
+
+            if self.xlabel_entered:
+                self.plot.axes.set_xlabel(self.xax)
+                self.plot.axes.xaxis.label.set_fontsize(self.font)
+
+            if self.title_entered:
+                self.plot.axes.set_title(self.title)
+                self.plot.axes.title.set_fontsize(self.font)
+
+            if self.yticks_entered:
+                self.plot.axes.set_yticks(self.yticks)
+                try:
+                    self.plot.axes.get_yticklabels().set_fontsize(self.font)
+                except AttributeError:
+                    pass
+
+            if self.xticks_entered:
+                self.plot.axes.set_xticks(self.xticks)
+                try:
+                    self.plot.axes.get_xticklabels().set_fontsize(self.font)
+                except AttributeError:
+                    pass
+
+            # self.plot.axes.tight_layout()
+
+            if self.labels_entered and not self.user_labels:
+                self.labels = []
+
+                for ii in range(1, len(self.data[0, :])):
+                    self.labels.append(f"Data {ii}")
+                self.labels_entered = True
+
+            if self.labels_entered:
+                for ii in range(len(self.data[0, :]) - 1):
+                    self.plot.axes.plot(self.data[:, 0],
+                                        self.data[:, ii + 1],
+                                        label=self.labels[ii])
+                # self.plot.axes.legend()
+                self.plot.axes.legend().set_draggable(True)
+                # print(self.plot.axes.legend().get_window_extent())
+            else:
+                for ii in range(len(self.data[0, :]) - 1):
+                    self.plot.axes.plot(self.data[:, 0], self.data[:, ii + 1])
+
+            if self.y_mode:
+                self.plot.axes.set_yscale('log')
+            else:
+                self.plot.axes.ticklabel_format(axis='y',
+                                                style='sci',
+                                                scilimits=(-2, 2),
+                                                useMathText=True)
+
+            if self.x_mode:
+                self.plot.axes.set_xscale('log')
+            else:
+                self.plot.axes.ticklabel_format(axis='x',
+                                                style='sci',
+                                                scilimits=(-2, 2),
+                                                useMathText=True)
+
+            self.plot.draw()
+            self.current_file = self.file
+        except FileNotFoundError:
+            if self.current_file != 'Filename':
+                self.file = self.current_file
+                self.data = pd.read_csv(self.file, engine='python',
+                                        index_col=False).to_numpy()
+
+                self.plot.axes.cla()
+
+                if self.ylabel_entered:
+                    self.plot.axes.set_ylabel(self.yax)
+                    self.plot.axes.yaxis.label.set_fontsize(self.font)
+
+                if self.xlabel_entered:
+                    self.plot.axes.set_xlabel(self.xax)
+                    self.plot.axes.xaxis.label.set_fontsize(self.font)
+
+                if self.title_entered:
+                    self.plot.axes.set_title(self.title)
+                    self.plot.axes.title.set_fontsize(self.font)
+
+                if self.yticks_entered:
+                    self.plot.axes.set_yticks(self.yticks)
+                    try:
+                        self.plot.axes.get_yticklabels().set_fontsize(self.font)
+                    except AttributeError:
+                        pass
+
+                if self.xticks_entered:
+                    self.plot.axes.set_xticks(self.xticks)
+                    try:
+                        self.plot.axes.get_xticklabels().set_fontsize(self.font)
+                    except AttributeError:
+                        pass
+
+                # self.plot.axes.tight_layout()
+
+                if self.labels_entered and not self.user_labels:
+                    self.labels = []
+
+                    for ii in range(1, len(self.data[0, :])):
+                        self.labels.append(f"Data {ii}")
+                    self.labels_entered = True
+
+                if self.labels_entered:
+                    for ii in range(len(self.data[0, :]) - 1):
+                        self.plot.axes.plot(self.data[:, 0],
+                                            self.data[:, ii + 1],
+                                            label=self.labels[ii])
+                    # self.plot.axes.legend()
+                    self.plot.axes.legend().set_draggable(True)
+                    # print(self.plot.axes.legend().get_window_extent())
+                else:
+                    for ii in range(len(self.data[0, :]) - 1):
+                        self.plot.axes.plot(self.data[:, 0], self.data[:, ii + 1])
+
+                if self.y_mode:
+                    self.plot.axes.set_yscale('log')
+                else:
+                    self.plot.axes.ticklabel_format(axis='y',
+                                                    style='sci',
+                                                    scilimits=(-2, 2),
+                                                    useMathText=True)
+
+                if self.x_mode:
+                    self.plot.axes.set_xscale('log')
+                else:
+                    self.plot.axes.ticklabel_format(axis='x',
+                                                    style='sci',
+                                                    scilimits=(-2, 2),
+                                                    useMathText=True)
+
+                self.plot.draw()
+
+                self.params.param('Plot options',
+                                  'File:').setValue(self.file.split('/')[-1])
+            else:
+                pass
+
+    def exportPNG(self):
+
+        self.plot.fig.savefig('.'.join(self.file.split('.')[:-1]) + '.png')
+
 
 def main():
     app = QApplication(sys.argv)
