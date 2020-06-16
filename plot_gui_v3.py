@@ -29,7 +29,7 @@ TODO
 [X] Add comments
 [X] Allow user to select which column they'd like as their x axis
 [ ] Add functionality to transpose data matrix
-[ ] Deselect all when plotting
+[X] Deselect all when plotting
 """
 
 
