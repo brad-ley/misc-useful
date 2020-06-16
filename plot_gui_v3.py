@@ -609,9 +609,9 @@ class PlotGUI(QWidget):
 
             self.updatePlot()
 
-        # except AttributeError:
-        #     QMessageBox.about(self, "Error",
-        #                       "That file did not parse correctly.")
+        except AttributeError:
+            QMessageBox.about(self, "Error",
+                              "That file did not parse correctly.")
 
         except ValueError:
             QMessageBox.about(
