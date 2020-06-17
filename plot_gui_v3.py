@@ -780,9 +780,13 @@ class PlotGUI(QWidget):
                 for ii in range(0, len(self.data_types)):
                     if ii != self.x_index:
                         if 0 in self.data[:, ii]:
-                            self.plot_show[self.data_types[ii].rstrip('\n')] = False
-                            self.l.param('Plot lines', self.data_types[ii].rstrip('\n')).setValue(
-                                self.plot_show[self.data_types[ii].rstrip('\n')])
+                            self.plot_show[self.data_types[ii].rstrip(
+                                '\n')] = False
+                            self.l.param(
+                                'Plot lines',
+                                self.data_types[ii].rstrip('\n')).setValue(
+                                    self.plot_show[self.data_types[ii].rstrip(
+                                        '\n')])
                         else:
                             self.data[:, ii] = np.abs(self.data[:, ii])
                 self.pl.setLogMode(False, True)
