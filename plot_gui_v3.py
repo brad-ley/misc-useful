@@ -74,6 +74,7 @@ class PlotGUI(QWidget):
         self.possible_axis = {"xlog", "ylog", "xlin", "ylin"}
         self.real_axes = False
         self.select_all = True
+        self.setAcceptDrops(True)
         self.initUI()
 
         self.show()
@@ -277,6 +278,47 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Delimiter').sigValueChanged.connect(self.setDelim)
 
+    def dragEnterEvent(self, event):
+        """
+        Will allow user to drop data file onto gui for file input
+
+        File locations are stored in fname
+        :param e:
+        :return:
+        """
+
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """
+        Auto-plots if file is valid
+        :return:
+        """
+        files = [str(u.toLocalFile()) for u in event.mimeData().urls()]
+        self.file = files[0]
+
+        try:
+            fileopen = open(self.file, 'r')
+            self.prev_file = self.file
+
+            self.lines = fileopen.readlines()
+            fileopen.close()
+        except FileNotFoundError:
+            self.file = self.prev_file
+
+        except UnicodeDecodeError:
+            QMessageBox.about(
+                self, "Error",
+                "Plotter only excepts .txt, .csv, .dat, and .py filetypes")
+            self.file = self.prev_file
+
+        self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
+
+        self.makePlot()
+
     def chooseFile(self):
         """
         Opens dialog and returns filename for plotting. If filename isn't found, returns file for a file on bprice
@@ -293,24 +335,7 @@ class PlotGUI(QWidget):
             self.lines = fileopen.readlines()
             fileopen.close()
         except FileNotFoundError:
-            # try:
-            #     self.file = self.prev_file
-            #
-            #     if self.file == "Filename":  # this part will only work on bprice machine
-            #     # - might be good to generalize
-            #         if platform.system() == 'Darwin':
-            #             self.file = r"/Users/Brad/Documents/Research/2020/Data/20200309" \
-            #                         r"/M01_174_108_mono_activated_410nm_Scan000.dat"
-            #         elif platform.system() == 'Windows':
-            #             self.file = r"C:\Users\bdprice\Documents\Data\UV Vis\PR\20200309" \
-            #                         r"\E108Q 174 Monomer\M01_174_108_mono_activated_410nm_Scan000.dat"
-            #     fileopen = open(self.file, 'r')
-            #
-            #     self.lines = fileopen.readlines()
-            #     fileopen.close()
-            # except FileNotFoundError:
-            #     self.file = r"File not found (or maybe not selected)"
-            self.file = r"No file selected"  # simplified code here for distribution purposes
+            self.file = r"No file selected"
 
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
 
