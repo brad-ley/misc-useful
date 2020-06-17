@@ -298,26 +298,42 @@ class PlotGUI(QWidget):
         :return:
         """
         files = [str(u.toLocalFile()) for u in event.mimeData().urls()]
-        self.file = files[0]
+        plot_stack = self.plot_stack
 
-        try:
-            fileopen = open(self.file, 'r')
-            self.prev_file = self.file
+        for file in files:
+            try:
 
-            self.lines = fileopen.readlines()
-            fileopen.close()
-        except FileNotFoundError:
-            self.file = self.prev_file
+                if not self.plot_stack and not self.plot_multiple and hasattr(
+                        self, 'pl'):
+                    self.clearLast()
 
-        except UnicodeDecodeError:
-            QMessageBox.about(
-                self, "Error",
-                "Plotter only excepts .txt, .csv, .dat, and .py filetypes")
-            self.file = self.prev_file
+                if len(files) > 1:
+                    self.plot_stack = True
 
-        self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
+                self.file = file
 
-        self.makePlot()
+                fileopen = open(self.file, 'r')
+                self.prev_file = self.file
+
+                self.lines = fileopen.readlines()
+                fileopen.close()
+
+                self.f.param('File',
+                             'File:').setValue(self.file.split('/')[-1])
+                self.makePlot()
+
+            except FileNotFoundError:
+                self.file = self.prev_file
+
+            except UnicodeDecodeError:
+                QMessageBox.about(
+                    self, "Error",
+                    "Plotter only excepts .txt, .csv, .dat, and .py filetypes")
+                self.file = self.prev_file
+                files.remove(file)
+
+        self.plot_stack = plot_stack
+        self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
 
     def chooseFile(self):
         """
@@ -450,10 +466,11 @@ class PlotGUI(QWidget):
         :return:
         """
 
-        if self.plot_stack is False:
-            self.plot_stack = True
-        else:
-            self.plot_stack = False
+        #        if self.plot_stack is False:
+        #            self.plot_stack = True
+        #        else:
+        #            self.plot_stack = False
+        self.plot_stack = self.p.param('Plot options', 'Plot stack').value()
         self.p.param('Plot options', 'Plot stack').setValue(self.plot_stack)
 
     def startX(self):
@@ -530,16 +547,16 @@ class PlotGUI(QWidget):
 
         try:  # handles how many plots exist and how to clear them depending on user options
 
-            if self.plot_multiple:
-                # this will create additional plots in same window instead of re-plotting
-                self.pl = self.win.addPlot()
-                self.legend = self.pl.addLegend()
-            elif self.plot_stack:
+            if self.plot_stack:
                 if not hasattr(self, 'pl'):
                     self.pl = self.win.addPlot()
                     self.legend = self.pl.addLegend()
                 else:
                     pass
+            elif self.plot_multiple:
+                # this will create additional plots in same window instead of re-plotting
+                self.pl = self.win.addPlot()
+                self.legend = self.pl.addLegend()
             else:
                 self.win.clear()
                 self.pl = self.win.addPlot()
