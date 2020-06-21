@@ -43,12 +43,12 @@ for file in files:
         middle_averages[ll] = np.average(curr_data[np.where(
             np.abs(curr_data[:, ll]) == np.max(np.abs(curr_data[:, ll]))
         )[0][0] - int(np.shape(curr_data)[0] / 10):np.where(
-            np.abs(curr_data[:, ll]) == np.max(np.abs(curr_data[:, ll])))[0][0] +
-                                            int(np.shape(curr_data)[0] / 10), ll])
+            np.abs(curr_data[:, ll]) == np.max(np.abs(curr_data[:, ll]))
+        )[0][0] + int(np.shape(curr_data)[0] / 10), ll])
         maxes[ll] = np.max(np.abs(curr_data[:, ll]))
     sorted_average = [
-        ii[1]
-        for ii in sorted(middle_averages.items(), key=lambda x: x[1], reverse=True)
+        ii[1] for ii in sorted(
+            middle_averages.items(), key=lambda x: x[1], reverse=True)
     ]
 
     for key in middle_averages:
@@ -61,18 +61,19 @@ for file in files:
 
     phased_disp = curr_data[:, disp_idx]
     phased_absorp = curr_data[:, abs_idx]
-    print(file, middle_averages, maxes, sorted_average, sep='\n')
-    print(disp_idx, abs_idx)
-    print('---------------------------------------')
+    print(file)
+    # print(file, middle_averages, maxes, sorted_average, sep='\n')
+    # print(disp_idx, abs_idx)
 
     if np.abs(np.min(phased_disp)) > np.max(phased_disp):
-        print('negative')
+        print('flipped disp')
         phased_disp = -phased_disp
 
     if np.where(phased_absorp == np.min(phased_absorp))[0] < np.where(
             phased_absorp == np.min(phased_absorp))[0]:
         print('flipped abs')
         phased_absorp = -phased_absorp
+    print('---------------------------------------')
 
     curr_data[:, 2] = phased_disp
     curr_data[:, 4] = phased_absorp
@@ -148,10 +149,11 @@ temp_dict = {}
 for file in p2p:
     temp = file.split('_')[1].replace('p', '.').rstrip('K')
     temp_dict[temp] = abs(p2p[file])
-
 temp_sorted = [ii for ii in sorted([float(ii) for ii in temp_dict.keys()])]
 
 for temp in temp_sorted:
+    if temp == int(temp):
+        temp = int(temp)
     ppfile.write(str(temp) + ', ' + str(temp_dict[str(temp)]) + '\n')
 
 ppfile.close()
