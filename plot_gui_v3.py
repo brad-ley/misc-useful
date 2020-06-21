@@ -925,7 +925,7 @@ class PlotGUI(QWidget):
                     if ii != self.x_index:
                         self.pl.plot(self.data[:, self.x_index],
                                      self.data[:, ii],
-                                     pen=ii + self.plot_count,
+                                     pen=mkPen(ii + self.plot_count, width=3),
                                      name=self.data_types[ii].rstrip('\n') +
                                      "--" + self.plot_name)
                     self.plot_count += 1
@@ -938,7 +938,7 @@ class PlotGUI(QWidget):
                     if ii != self.x_index:
                         self.pl.plot(self.data[:, self.x_index],
                                      self.data[:, ii],
-                                     pen=ii,
+                                     pen=mkPen(ii, width=3),
                                      name=self.data_types[ii].rstrip('\n'))
             self.pl.setTitle(self.plot_title)
 
