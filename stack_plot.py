@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # set to 1 for dispersive lineshapes, set to zero for absorptive
-DISPERSIVE = 0
+DISPERSIVE = 1
 
 if DISPERSIVE == 1:
     start = 'dispersion_'
@@ -18,7 +18,8 @@ else:
 path = '/Users/Brad/Downloads/VT_cwEPR_BDPA_Bz_MultiDomain'
 files = sorted(
     [ii for ii in os.listdir() if ii.startswith(start)],
-    key=lambda x: float(x.split('_')[1].replace('p', '.').rstrip('K')))
+    key=lambda x: float(x.split('_')[1].replace('p', '.').rstrip('K')),
+    reverse=True)
 
 count = 0
 
@@ -33,7 +34,7 @@ for file in files:
              label=name)
     count -= 1
 
-    if file == files[-1]:
+    if file == files[0]:
         x_min = data[0, 0] * (1 - 1e-4)
         x_max = data[-1, 0] * (1 + 1e-4)
 
