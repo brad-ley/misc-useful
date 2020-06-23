@@ -3,9 +3,21 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+# set to 1 for dispersive lineshapes, set to zero for absorptive
+DISPERSIVE = 0
+
+if DISPERSIVE == 1:
+    start = 'dispersion_'
+    shift = 3 / 4
+    chi = "$\chi'$"
+else:
+    start = 'absorption_'
+    shift = 1.25
+    chi = "$\chi''$"
+
 path = '/Users/Brad/Downloads/VT_cwEPR_BDPA_Bz_MultiDomain'
 files = sorted(
-    [ii for ii in os.listdir() if ii.startswith('dispersion_')],
+    [ii for ii in os.listdir() if ii.startswith(start)],
     key=lambda x: float(x.split('_')[1].replace('p', '.').rstrip('K')))
 
 count = 0
@@ -17,7 +29,7 @@ for file in files:
 
     plt.figure(1)
     plt.plot(data[:, 0],
-             data[:, 1] / np.max(data[:, 1]) + 3 / 4 * count,
+             data[:, 1] / np.max(data[:, 1]) + shift * count,
              label=name)
     count -= 1
 
@@ -35,6 +47,6 @@ plt.tick_params(
 
 plt.xlabel('Field (T)')
 plt.legend().set_draggable(True)
-plt.title("cwEPR, $\chi'$ of BDPA-Bz")
-plt.savefig('shifted_dispersions_fig.png')
+plt.title(f"cwEPR, {chi} of BDPA-Bz")
+plt.savefig(f"shifted_{start}fig.png")
 plt.show()
