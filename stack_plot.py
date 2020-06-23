@@ -12,7 +12,7 @@ if DISPERSIVE == 1:
     chi = "$\chi'$"
 else:
     start = 'absorption_'
-    shift = 1.25
+    shift = 1.5
     chi = "$\chi''$"
 
 path = '/Users/Brad/Downloads/VT_cwEPR_BDPA_Bz_MultiDomain'

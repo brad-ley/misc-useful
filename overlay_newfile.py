@@ -60,24 +60,25 @@ for file in files:
 
     abs_idx = sorted(maxes.items(), key=lambda x: x[1], reverse=True)[0][0]
 
-    phased_disp = curr_data[:, disp_idx]
-    phased_absorp = curr_data[:, abs_idx]
+    phased_disp = np.copy(curr_data[:, disp_idx])
+    phased_absorp = np.copy(curr_data[:, abs_idx])
     print(file)
     print(file, middle_averages, maxes, sorted_average, sep='\n')
     print(disp_idx, abs_idx)
 
     if np.abs(np.min(phased_disp)) > np.max(phased_disp):
         print('flipped disp')
-        phased_disp = -phased_disp
+        phased_disp = -1 * phased_disp
 
     if np.where(phased_absorp == np.min(phased_absorp))[0] < np.where(
             phased_absorp == np.min(phased_absorp))[0]:
         print('flipped abs')
-        phased_absorp = -phased_absorp
-        print('---------------------------------------')
+        phased_absorp = -1 * phased_absorp
 
-    curr_data[:, 2] = phased_disp
-    curr_data[:, 4] = phased_absorp
+    curr_data[:, 2] = phased_disp[:]
+    curr_data[:, 4] = phased_absorp[:]
+
+    print('---------------------------------------')
     curr_B = curr_data[int(
         np.where(curr_data[:, 2] == np.max(curr_data[:, 2]))[0][0]), 1]
     diff_B = curr_B - middle_B
