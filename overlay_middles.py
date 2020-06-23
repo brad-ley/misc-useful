@@ -11,6 +11,8 @@ import numpy as np
 #    return ret[n - 1:] / n
 
 files = [ii for ii in os.listdir(os.getcwd()) if ii.endswith('ephased.dat')]
+by_temp = sorted(
+    files, key=lambda x: float(x.split('_')[1].replace('p', '.').rstrip('K')))
 file_length = {}
 
 for file in files:
@@ -18,7 +20,7 @@ for file in files:
     lines = [ii.rstrip('\n') for ii in open_file.readlines()]
     file_length[file] = len(lines)
 
-files = [
+files_sort = [
     ii[0]
     for ii in sorted(file_length.items(), key=lambda x: x[1], reverse=True)
 ]
@@ -30,7 +32,7 @@ absfile.write("Field (T), ")
 ppfile = open('combined_p2p.txt', 'w')
 p2p = {}
 
-for file in files:
+for file in files_sort:
     open_file = open(file, 'r')
     lines = [ii.rstrip('\n') for ii in open_file.readlines()]
     data_index = lines.index('[Data]') + 2
@@ -39,12 +41,17 @@ for file in files:
     middle_averages = {}
     maxes = {}
 
+    this_idx = by_temp.index(file)
+
     for ll in range(2, np.shape(curr_data)[1]):
-        middle_averages[ll] = np.average(curr_data[np.where(
-            np.abs(curr_data[:, ll]) == np.max(np.abs(curr_data[:, ll]))
-        )[0][0] - int(np.shape(curr_data)[0] / 10):np.where(
-            np.abs(curr_data[:, ll]) == np.max(np.abs(curr_data[:, ll]))
-        )[0][0] + int(np.shape(curr_data)[0] / 10), ll])
+        middle_averages[ll] = np.abs(
+            np.average(curr_data[np.where(
+                np.abs(curr_data[:, ll]) ==
+                np.max(np.abs(curr_data[:, ll])))[0][0] -
+                                 int(np.shape(curr_data)[0] / 10):np.where(
+                                     np.abs(curr_data[:, ll]) ==
+                                     np.max(np.abs(curr_data[:, ll])))[0][0] +
+                                 int(np.shape(curr_data)[0] / 10), ll]))
         maxes[ll] = np.max(np.abs(curr_data[:, ll]))
     sorted_average = [
         ii[1] for ii in sorted(
@@ -62,8 +69,8 @@ for file in files:
     phased_disp = curr_data[:, disp_idx]
     phased_absorp = curr_data[:, abs_idx]
     print(file)
-    # print(file, middle_averages, maxes, sorted_average, sep='\n')
-    # print(disp_idx, abs_idx)
+    print(file, middle_averages, maxes, sorted_average, sep='\n')
+    print(disp_idx, abs_idx)
 
     if np.abs(np.min(phased_disp)) > np.max(phased_disp):
         print('flipped disp')
@@ -73,18 +80,18 @@ for file in files:
             phased_absorp == np.min(phased_absorp))[0]:
         print('flipped abs')
         phased_absorp = -phased_absorp
-    print('---------------------------------------')
+        print('---------------------------------------')
 
     curr_data[:, 2] = phased_disp
     curr_data[:, 4] = phased_absorp
 
-    if file == files[0]:
+    if file == files_sort[0]:
         curr_data[:, 1] += 8.57
-        fulldisp = np.zeros((len(curr_data[:, 1]), len(files) + 1))
-        fullabs = np.zeros((len(curr_data[:, 1]), len(files) + 1))
+        fulldisp = np.zeros((len(curr_data[:, 1]), len(files_sort) + 1))
+        fullabs = np.zeros((len(curr_data[:, 1]), len(files_sort) + 1))
         middle = int(np.where(curr_data[:, 2] == max(curr_data[:, 2]))[0][0])
-        fulldisp[:len(curr_data[:, 1]), [0, 1]] = curr_data[:, [1, 2]]
-        fullabs[:len(curr_data[:, 1]), [0, 1]] = curr_data[:, [1, 4]]
+        fulldisp[:len(curr_data[:, 1]), [0, this_idx]] = curr_data[:, [1, 2]]
+        fullabs[:len(curr_data[:, 1]), [0, this_idx]] = curr_data[:, [1, 4]]
     else:
         curr_index = int(
             np.where(curr_data[:, 2] == max(curr_data[:, 2]))[0][0])
@@ -94,33 +101,39 @@ for file in files:
 
         if delta_index > 0:
             fulldisp[:len(curr_data[delta_index:, 2]),
-                     files.index(file) + 1] = curr_data[delta_index:, 2]
+                     by_temp.index(file) + 1] = curr_data[delta_index:, 2]
             fullabs[:len(curr_data[delta_index:, 2]),
-                    files.index(file) + 1] = curr_data[delta_index:, 2]
+                    by_temp.index(file) + 1] = curr_data[delta_index:, 2]
         elif delta_index < 0:
             fulldisp[np.abs(delta_index):np.abs(delta_index) +
                      len(curr_data[:delta_index, 2]),
-                     files.index(file) + 1] = curr_data[:delta_index, 2]
+                     by_temp.index(file) + 1] = curr_data[:delta_index, 2]
             fullabs[np.abs(delta_index):np.abs(delta_index) +
                     len(curr_data[:delta_index, 4]),
-                    files.index(file) + 1] = curr_data[:delta_index, 4]
+                    by_temp.index(file) + 1] = curr_data[:delta_index, 4]
         else:
-            fulldisp[:, files.index(file) + 1] = np.hstack(
+            fulldisp[:, by_temp.index(file) + 1] = np.hstack(
                 (curr_data[:, 2], np.zeros(length_diff)))
-            fullabs[:, files.index(file) + 1] = np.hstack(
+            fullabs[:, by_temp.index(file) + 1] = np.hstack(
                 (curr_data[:, 4], np.zeros(length_diff)))
     min_idx = int(
-        np.where(fullabs[:, files.index(file) +
-                         1] == np.min(fullabs[:, files.index(file) +
+        np.where(fullabs[:, by_temp.index(file) +
+                         1] == np.min(fullabs[:, by_temp.index(file) +
                                               1]))[0][0])
     max_idx = int(
-        np.where(fullabs[:, files.index(file) +
-                         1] == np.max(fullabs[:, files.index(file) +
+        np.where(fullabs[:, by_temp.index(file) +
+                         1] == np.max(fullabs[:, by_temp.index(file) +
                                               1]))[0][0])
     p2p[file] = (fullabs[min_idx, 0] - fullabs[max_idx, 0]) * 10**4
     open_file.close()
 
-    if file == files[-1]:
+#    if file.startswith('M02'):
+#        print(delta_index)
+#        print(phased_disp, len(phased_disp))
+#        print(fulldisp[:, by_temp.index(file) + 1])
+
+for file in by_temp:
+    if file == by_temp[-1]:
         dispfile.write(file.split('_')[1].replace('p', '.'))
         absfile.write(file.split('_')[1].replace('p', '.'))
     else:
