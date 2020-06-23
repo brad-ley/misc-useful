@@ -98,7 +98,7 @@ for file in files:
         f"Field (T), {file.split('_')[1].replace('p', '.')} (deriv)\n")
     min_idx = int(np.where(curr_data[:, 4] == np.min(curr_data[:, 4]))[0][0])
     max_idx = int(np.where(curr_data[:, 4] == np.max(curr_data[:, 4]))[0][0])
-    p2p[file] = (curr_data[min_idx, 0] - curr_data[max_idx, 0]) * 10**4
+    p2p[file] = (curr_data[min_idx, 1] - curr_data[max_idx, 1]) * 10**4
 
     for row in curr_data:
         disp_file.write(f"{row[1]}, {row[2]}\n")
