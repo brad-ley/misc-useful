@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 
 def replace(*args):
@@ -37,10 +37,12 @@ def replace(*args):
             filetoedit = goodpath + delim + item
             file = open(filetoedit, 'r')
             doc = ''
+
             for line in file:
                 line = line.rstrip('\n')
 
-                if targ_string in line.lstrip(' ').lstrip('\t')[:len(targ_string)]:
+                if targ_string in line.lstrip(' ').lstrip(
+                        '\t')[:len(targ_string)]:
                     commentpos = line.find('#')
 
                     if commentpos != -1:
@@ -57,7 +59,8 @@ def replace(*args):
                         comment = ''
 
                     print(line)
-                    line = line.replace(targ_string, 'print(')  # strings are immutable... duh
+                    # strings are immutable... duh
+                    line = line.replace(targ_string, 'print(')
                     line = line.rstrip(' ')
                     line = line + ') ' + comment
 
@@ -73,7 +76,8 @@ def replace(*args):
             newfile.write(doc)
             newfile.close()
 
-            print('Completed for: ' + item + '. Replaced %d occurrences.' % count)
+            print('Completed for: ' + item +
+                  '. Replaced %d occurrences.' % count)
 
     print('Completed for directory %s.' % goodpath)
 
@@ -81,5 +85,6 @@ def replace(*args):
 if __name__ == "__main__":
     replace()
 else:
-    print('Methods:\nreplace() -- replaces "print ..." with "print(...)"; can use no args or arg'
+    print('Methods:\nreplace() -- replaces "print ..." with "print(...)";'
+          ' can use no args or arg'
           ' with string to be replaced\nInput target directory after running')
