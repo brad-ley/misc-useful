@@ -31,7 +31,7 @@ def replace(*args):
             file_list.remove(item)
 
     for item in file_list:
-        if '.py' in item:
+        if item.endswith('.py'):
             # print(item)
             count = 0
             filetoedit = goodpath + delim + item
