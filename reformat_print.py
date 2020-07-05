@@ -85,6 +85,6 @@ def replace(*args):
 if __name__ == "__main__":
     replace()
 else:
-    print('Methods:\nreplace() -- replaces "print ..." with "print(...)";'
+    print('Functions:\nreplace() -- replaces "print ..." with "print(...)";'
           ' can use no args or arg'
           ' with string to be replaced\nInput target directory after running')
