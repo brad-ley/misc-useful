@@ -1,10 +1,19 @@
 import os
+import re
 
 import numpy as np
 
-files = [ii for ii in os.listdir(os.getcwd()) if ii.endswith('ephased.dat')]
+target_directory = '/Volumes/GoogleDrive/My Drive/Research/Data/2020-07-12/'
+
+if not target_directory:
+    target_directory = os.getcwd()
+
+files = [
+    target_directory + ii for ii in os.listdir(target_directory) if ii.endswith('ephased.dat')
+]
+
 by_temp = sorted(
-    files, key=lambda x: float(x.split('_')[1].replace('p', '.').rstrip('K')))
+    files, key=lambda x: float(x.split('_')[-2].replace('p', '.').rstrip('K')))
 file_length = {}
 
 for file in files:
@@ -62,16 +71,16 @@ for file in files:
 
     phased_disp = np.copy(curr_data[:, disp_idx])
     phased_absorp = np.copy(curr_data[:, abs_idx])
-    print(file)
-    print(file, middle_averages, maxes, sorted_average, sep='\n')
+    print(file.split('/')[-1], middle_averages, maxes, sorted_average, sep='\n')
     print(disp_idx, abs_idx)
 
     if np.abs(np.min(phased_disp)) > np.max(phased_disp):
         print('flipped disp')
         phased_disp = -1 * phased_disp
-
-    if np.where(phased_absorp == np.min(phased_absorp))[0] < np.where(
-            phased_absorp == np.min(phased_absorp))[0]:
+    
+    max_idx = np.where(phased_absorp == np.max(phased_absorp))[0][0]
+    min_idx = np.where(phased_absorp == np.min(phased_absorp))[0][0]
+    if curr_data[min_idx, 1] < curr_data[max_idx, 1]: 
         print('flipped abs')
         phased_absorp = -1 * phased_absorp
 
@@ -84,18 +93,18 @@ for file in files:
     diff_B = curr_B - middle_B
     curr_data[:, 1] -= diff_B
 
-    disp_name = 'dispersion_' + \
-        file.split('_')[1].replace('p', '.') + '_exp.txt'
-    abs_name = 'absorption_' + \
-        file.split('_')[1].replace('p', '.') + '_exp.txt'
+    disp_name = target_directory + 'dispersion_' + \
+        file.split('_')[-2].replace('p', '.') + '_exp.txt'
+    abs_name = target_directory + 'absorption_' + \
+        file.split('_')[-2].replace('p', '.') + '_exp.txt'
 
     disp_file = open(disp_name, 'w')
     abs_file = open(abs_name, 'w')
 
     disp_file.write(
-        f"Field (T), {file.split('_')[1].replace('p', '.')} (deriv)\n")
+        f"Field (T), {file.split('_')[-2].replace('p', '.')} (deriv)\n")
     abs_file.write(
-        f"Field (T), {file.split('_')[1].replace('p', '.')} (deriv)\n")
+        f"Field (T), {file.split('_')[-2].replace('p', '.')} (deriv)\n")
     min_idx = int(np.where(curr_data[:, 4] == np.min(curr_data[:, 4]))[0][0])
     max_idx = int(np.where(curr_data[:, 4] == np.max(curr_data[:, 4]))[0][0])
     p2p[file] = (curr_data[min_idx, 1] - curr_data[max_idx, 1]) * 10**4
@@ -107,19 +116,20 @@ for file in files:
     disp_file.close()
     abs_file.close()
 
-ppfile = open('peak-to-peak.txt', 'w')
+ppfile = open(target_directory + 'peak-to-peak.txt', 'w')
 ppfile.write('Temp (K), Peak-to-peak width (G)\n')
 
 temp_dict = {}
 
 for file in p2p:
-    temp = file.split('_')[1].replace('p', '.').rstrip('K')
+    temp = f"{float(file.split('_')[-2].replace('p', '.').rstrip('K')):.1f}" 
     temp_dict[temp] = abs(p2p[file])
+
 temp_sorted = [ii for ii in sorted([float(ii) for ii in temp_dict.keys()])]
 
 for temp in temp_sorted:
-    if temp == int(temp):
-        temp = int(temp)
+    # if temp == int(temp):
+    #     temp = int(temp)
     ppfile.write(str(temp) + ', ' + str(temp_dict[str(temp)]) + '\n')
 
 ppfile.close()
