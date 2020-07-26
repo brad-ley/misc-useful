@@ -1,7 +1,7 @@
 """
 This opens a gui and lets the user update with their chosen .dat
 """
-# !/opt/anaconda3/bin python3
+#!/opt/anaconda3/bin python3
 
 # need to make sure when creating app that I use python3 because that is in usr/local/bin, which is where my local
 # python dist and py2app are located
@@ -17,9 +17,9 @@ import pandas as pd
 from cycler import cycler
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-# from PyQt5.QtCore import *
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QMainWindow, QMessageBox, QWidget)
+                             QMainWindow, QMessageBox, QWidget, QFileDialog)
 from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
                        setConfigOptions)
 from pyqtgraph.parametertree import Parameter, ParameterTree
@@ -77,7 +77,6 @@ class PlotGUI(QWidget):
         self.real_axes = False
         self.select_all = True
         self.setAcceptDrops(True)
-        self.lr = LinearRegionItem()
         self.region = [0, 0]
         self.regionString()
 
@@ -387,18 +386,19 @@ class PlotGUI(QWidget):
         """
         try:
             if self.plot_multiple:
-                self.win.removeItem(self.pl)
+                self.win.removeItem(self.pl[-1])
+                self.pl.pop(-1)
             else:
                 self.clearPlot()
             self.plot_count = 0
         except AttributeError:
             QMessageBox.about(self, "Error", "No plot to clear.")
-        except:
-            QMessageBox.about(
-                self, "Error",
-                "Clear last can only clear the most recent plot. "
-                "There is not record of 'last' plot beside the one just cleared."
-            )
+        # except:
+        #     QMessageBox.about(
+        #         self, "Error",
+        #         "Clear last can only clear the most recent plot. "
+        #         "There is not record of 'last' plot beside the one just cleared."
+        #     )
 
     def plotShow(self, name):
         """
@@ -468,6 +468,10 @@ class PlotGUI(QWidget):
             self.plot_multiple = True
         else:
             self.plot_multiple = False
+
+        if self.plot_multiple and hasattr(self, 'pl'):
+            self.pl.removeItem(self.lr)
+
         self.p.param('Plot options',
                      'Plot multiple').setValue(self.plot_multiple)
 
@@ -563,6 +567,7 @@ class PlotGUI(QWidget):
         Extracts data and sets up plotting window
         :return:
         """
+        self.lr = LinearRegionItem()
 
         try:  # handles how many plots exist and how to clear them depending on user options
 
@@ -574,15 +579,21 @@ class PlotGUI(QWidget):
                     pass
             elif self.plot_multiple:
                 # this will create additional plots in same window instead of re-plotting
-                self.pl = self.win.addPlot()
-                self.legend = self.pl.addLegend()
+                if not hasattr(self, 'pl'):
+                    self.pl = [self.win.addPlot()]
+                else:
+                    if type(self.pl) != list:
+                        self.pl = [self.pl]
+                    self.pl.append(self.win.addPlot())
+                self.legend = self.pl[-1].addLegend()
             else:
                 self.win.clear()
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
 
-            self.pl.addItem(self.lr)
-            self.lr.sigRegionChanged.connect(self.regionSet)
+            if not self.plot_multiple:
+                self.pl.addItem(self.lr)
+                self.lr.sigRegionChanged.connect(self.regionSet)
 
             self.begin_idx = self.begin_line = self.data_type = self.footerskip = - \
                 1  # set to determine if a file
@@ -813,10 +824,10 @@ class PlotGUI(QWidget):
 
     def updatePlot(self):
         """
-        Activated when user clicks Update Plot. (Re)draws lines depending on user selections.
+        Activated when user clicks Update Plot. 
+        (Re)draws lines depending on user selections.
         :return:
         """
-
         xset = False
 
         text_data_types = [ii.lower() for ii in self.data_types]
@@ -853,10 +864,17 @@ class PlotGUI(QWidget):
                 for ii in range(0, len(self.data_types)):
                     if ii != self.x_index:
                         self.data[:, ii] = np.abs(self.data[:, ii])
-                self.pl.setLogMode(True, True)
+
+                if type(self.pl) == list:
+                    self.pl[-1].setLogMode(True, True)
+                else:
+                    self.pl.setLogMode(True, True)
                 xset = True
             elif "xlog" in self.each_axis:
-                self.pl.setLogMode(True, False)
+                if type(self.pl) == list:
+                    self.pl[-1].setLogMode(True, False)
+                else:
+                    self.pl.setLogMode(True, False)
                 xset = True
             elif "ylog" in self.each_axis:
                 for ii in range(0, len(self.data_types)):
@@ -871,9 +889,16 @@ class PlotGUI(QWidget):
                                         '\n')])
                         else:
                             self.data[:, ii] = np.abs(self.data[:, ii])
-                self.pl.setLogMode(False, True)
+
+                if type(self.pl) == list:
+                    self.pl[-1].setLogMode(False, True)
+                else:
+                    self.pl.setLogMode(False, True)
             else:
-                self.pl.setLogMode(False, False)
+                if type(self.pl) == list:
+                    self.pl[-1].setLogMode(False, False)
+                else:
+                    self.pl.setLogMode(False, False)
 
             if xset:
 
@@ -933,9 +958,15 @@ class PlotGUI(QWidget):
                         self.data[:, ii] = self.data[:, ii] / \
                             np.max(np.absolute(self.data[:, ii]))
 
-            self.pl.setLabel('left', 'Magnitude (normalized)')
+            if type(self.pl) == list:
+                self.pl[-1].setLabel('left', 'Magnitude (normalized)')
+            else:
+                self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
-            self.pl.setLabel('left', 'Magnitude')
+            if type(self.pl) == list:
+                self.pl[-1].setLabel('left', 'Magnitude')
+            else:
+                self.pl.setLabel('left', 'Magnitude')
 
         # exception handling for start and end time cases
 
@@ -963,11 +994,20 @@ class PlotGUI(QWidget):
                     ii = self.data_types.index(key)
 
                     if ii != self.x_index:
-                        self.pl.plot(self.data[:, self.x_index],
-                                     self.data[:, ii],
-                                     pen=mkPen(ii + self.plot_count, width=3),
-                                     name=self.data_types[ii].rstrip('\n') +
-                                     "--" + self.plot_name)
+                        if type(self.pl) == list:
+                            self.pl[-1].plot(
+                                self.data[:, self.x_index],
+                                self.data[:, ii],
+                                pen=mkPen(ii + self.plot_count, width=3),
+                                name=self.data_types[ii].rstrip('\n') + "--" +
+                                self.plot_name)
+                        else:
+                            self.pl.plot(
+                                self.data[:, self.x_index],
+                                self.data[:, ii],
+                                pen=mkPen(ii + self.plot_count, width=3),
+                                name=self.data_types[ii].rstrip('\n') + "--" +
+                                self.plot_name)
                     self.plot_count += 1
 
         else:
@@ -976,24 +1016,35 @@ class PlotGUI(QWidget):
                     ii = self.data_types.index(key)
 
                     if ii != self.x_index:
-                        self.pl.plot(self.data[:, self.x_index],
-                                     self.data[:, ii],
-                                     pen=mkPen(ii, width=3),
-                                     name=self.data_types[ii].rstrip('\n'))
-            self.pl.setTitle(self.plot_title)
+                        if type(self.pl) == list:
+                            self.pl[-1].plot(
+                                self.data[:, self.x_index],
+                                self.data[:, ii],
+                                pen=mkPen(ii, width=3),
+                                name=self.data_types[ii].rstrip('\n'))
+                        else:
+                            self.pl.plot(self.data[:, self.x_index],
+                                         self.data[:, ii],
+                                         pen=mkPen(ii, width=3),
+                                         name=self.data_types[ii].rstrip('\n'))
 
-        self.pl.enableAutoRange()
-
-        self.pl.setLabel('bottom', self.data_types[self.x_index])
-
-        self.pl.show()
+            if type(self.pl) == list:
+                self.pl[-1].setTitle(self.plot_title)
+                self.pl[-1].enableAutoRange()
+                self.pl[-1].setLabel('bottom', self.data_types[self.x_index])
+                self.pl[-1].show()
+            else:
+                self.pl.setTitle(self.plot_title)
+                self.pl.enableAutoRange()
+                self.pl.setLabel('bottom', self.data_types[self.x_index])
+                self.pl.show()
 
         self.current_file = self.file
 
     def keyPressEvent(self, e):
-        if e.key() == QtCore.Qt.Key_Escape:
+        if e.key() == Qt.Key_Escape:
             self.close()
-        elif e.key() == QtCore.Qt.Key_Enter:
+        elif e.key() == Qt.Key_Enter:
             self.makePlot()
         elif e.key(
         ) == 16777220:  # enter for Mac, will need to find out enter for windows
@@ -1006,8 +1057,8 @@ class PlotGUI(QWidget):
 
 
 """
-This allows a user to import a csv file from plot_gui app export and the user can live-update their matplotlib plot
-in window for final export to png
+This allows a user to import a csv file from plot_gui app export and the user 
+can live-update their matplotlib plot in window for final export to png
 """
 
 mplb.use('QT5Agg')
