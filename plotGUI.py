@@ -79,7 +79,7 @@ class PlotGUI(QWidget):
         self.setAcceptDrops(True)
         self.lr = LinearRegionItem()
         self.region = [0, 0]
-        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+        self.regionString()
 
         self.initUI()
 
@@ -471,9 +471,13 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Plot multiple').setValue(self.plot_multiple)
 
+
+    def regionString(self):
+        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+    
     def regionSet(self):
         self.region = self.lr.getRegion()
-        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+        self.regionString()
         self.x.param('x axis', 'Selection').setValue(self.window_string)
 
     def plotStack(self):
