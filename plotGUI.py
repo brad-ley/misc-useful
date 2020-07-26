@@ -1078,15 +1078,14 @@ class PlotGUI(QWidget):
         window = MainWindow(self)
 
 
-"""
-This allows a user to import a csv file from plot_gui app export and the user 
-can live-update their matplotlib plot in window for final export to png
-"""
-
 mplb.use('QT5Agg')
 
 
 class MplCanvas(FigureCanvasQTAgg):
+    """
+    This allows a user to import a csv file from plot_gui app export and the user 
+    can live-update their matplotlib plot in window for final export to png
+    """
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
