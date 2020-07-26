@@ -1,7 +1,7 @@
 """
 This opens a gui and lets the user update with their chosen .dat
 """
-# !/opt/anaconda3/bin/python
+# !/opt/anaconda3/bin python3
 
 # need to make sure when creating app that I use python3 because that is in usr/local/bin, which is where my local
 # python dist and py2app are located
@@ -471,10 +471,9 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Plot multiple').setValue(self.plot_multiple)
 
-
     def regionString(self):
         self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
-    
+
     def regionSet(self):
         self.region = self.lr.getRegion()
         self.regionString()
