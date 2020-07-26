@@ -1,10 +1,12 @@
 import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
+# sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
 from iterateFilename import iterate
+
 
 def main(filename):
     fig, ax = plt.subplots()
@@ -16,6 +18,7 @@ def main(filename):
     r_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
     xdata, ydata = [], []
     data = np.loadtxt(filename, delimiter=',')
+
     if np.shape(data)[0] > np.shape(data)[1]:
         data = np.transpose(data)
     init_max_y = np.max(data[0, :])
@@ -53,12 +56,15 @@ def main(filename):
                         repeat=False,
                         init_func=init,
                         save_count=np.shape(data)[0])
-    
-    startsave = './gifs/' + filename[:-4] + '.gif'
+
+    startsave = '/'.join(filename.split('/')[:-1]) + '/gifs/' + filename.split(
+        '/')[-1][:-4] + '.gif'
     savefile = iterate(startsave)
     ani.save(savefile, writer=PillowWriter(fps=10))
 
 
 if __name__ == "__main__":
     # main("./data/D,stdev=1213,418_deriv.txt")
-    main("PyMTA_240GHz_add_SIMS.txt")
+    main(
+        "/Users/Brad/Box Sync/Sherwin Lab/matlab/Gd(III) Label Modeling Project/Calculations/Rewritten CWdipFit/Data/PyMTA_240GHz_add_SIMS.txt"
+    )

@@ -17,10 +17,12 @@ import pandas as pd
 from cycler import cycler
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from pyqtgraph import *
-from pyqtgraph.parametertree import *
+# from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
+                             QMainWindow, QMessageBox, QWidget)
+from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
+                       setConfigOptions)
+from pyqtgraph.parametertree import Parameter, ParameterTree
 
 # import csv_fig  # error appears when using this submodule
 """
@@ -561,6 +563,7 @@ class PlotGUI(QWidget):
                 self.win.clear()
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
+            self.curs1 = LinearRegionItem([0, 40])
 
             self.begin_idx = self.begin_line = self.data_type = self.footerskip = - \
                 1  # set to determine if a file
@@ -603,12 +606,17 @@ class PlotGUI(QWidget):
                     ]
 
             else:
-                self.data = pd.read_csv(self.file,
-                                        sep=self.plot_delimiter,
-                                        header=self.begin_line - 1,
-                                        skipfooter=self.footerskip,
-                                        engine='python',
-                                        index_col=False).to_numpy()
+                try:
+                    self.data = np.loadtxt(self.file,
+                                           delimiter=self.plot_delimiter,
+                                           skiprows=self.begin_line - 1)
+                except ValueError:
+                    self.data = pd.read_csv(self.file,
+                                            sep=self.plot_delimiter,
+                                            header=self.begin_line - 1,
+                                            skipfooter=self.footerskip,
+                                            engine='python',
+                                            index_col=False).to_numpy()
 
             if self.plot_avg:  # handles averaging stupidly... just adds columns and divides by number of files
                 if is_number(self.file.split('.')[-2][-3:]):
@@ -624,13 +632,25 @@ class PlotGUI(QWidget):
                 count = 0
 
                 for file in filelist:
-                    datalist = datalist + pd.read_csv(
-                        file,
-                        sep=self.plot_delimiter,
-                        header=self.begin_line - 1,
-                        skipfooter=self.footerskip,
-                        engine='python',
-                        index_col=False).to_numpy()
+                    try:
+                        new_data = np.loadtxt(self.file,
+                                              delimiter=self.plot_delimiter,
+                                              skiprows=self.begin_line - 1)
+
+                        if np.shape(datalist)[1] == np.shape(new_data)[1] + 1:
+                            datalist[:, 1:] = new_data
+                            datalist[:, 0] = np.array(list(range(len(data))))
+                        else:
+                            datalist = datalist + new_data
+
+                    except ValueError:
+                        datalist = datalist + pd.read_csv(
+                            file,
+                            sep=self.plot_delimiter,
+                            header=self.begin_line - 1,
+                            skipfooter=self.footerskip,
+                            engine='python',
+                            index_col=False).to_numpy()
                     count += 1
 
                 self.data = datalist / count
@@ -679,7 +699,8 @@ class PlotGUI(QWidget):
 
     def getLines(self):
         """
-        Finds lines where data lives. That info is used in pandas.read_csv to skip header and footer.
+        Finds lines where data lives. That info is used in numpy.loadtxt to
+        skiprows and pandas.read_csv to skip header and footer.
         :return:
         """
 
@@ -1257,9 +1278,14 @@ class MainWindow(QMainWindow):
 
     def updatePlot(self):
         try:
-            self.data = pd.read_csv(self.file,
-                                    engine='python',
-                                    index_col=False).to_numpy()
+            try:
+                self.data = np.loadtxt(self.file,
+                                       delimiter=self.plot_delimiter,
+                                       skiprows=self.begin_line - 1)
+            except ValueError:
+                self.data = pd.read_csv(self.file,
+                                        engine='python',
+                                        index_col=False).to_numpy()
 
             self.plot.axes.cla()
 
@@ -1331,9 +1357,14 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             if self.current_file != 'Filename':
                 self.file = self.current_file
-                self.data = pd.read_csv(self.file,
-                                        engine='python',
-                                        index_col=False).to_numpy()
+                try:
+                    self.data = np.loadtxt(self.file,
+                                           delimiter=self.plot_delimiter,
+                                           skiprows=self.begin_line - 1)
+                except ValueError:
+                    self.data = pd.read_csv(self.file,
+                                            engine='python',
+                                            index_col=False).to_numpy()
 
                 self.plot.axes.cla()
 
