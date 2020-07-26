@@ -77,6 +77,10 @@ class PlotGUI(QWidget):
         self.real_axes = False
         self.select_all = True
         self.setAcceptDrops(True)
+        self.lr = LinearRegionItem()
+        self.region = [0, 0]
+        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+
         self.initUI()
 
         self.show()
@@ -190,6 +194,11 @@ class PlotGUI(QWidget):
                 'type': 'str',
                 'value': self.x_string,
                 'tip': 'Type name for x axis data'
+            }, {
+                'name': 'Selection',
+                'type': 'str',
+                'value': self.window_string,
+                'tip': 'Width of selection window'
             }]
         }]
 
@@ -462,6 +471,11 @@ class PlotGUI(QWidget):
         self.p.param('Plot options',
                      'Plot multiple').setValue(self.plot_multiple)
 
+    def regionSet(self):
+        self.region = self.lr.getRegion()
+        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+        self.x.param('x axis', 'Selection').setValue(self.window_string)
+
     def plotStack(self):
         """
         Plots new file over old file to compare on top
@@ -563,7 +577,9 @@ class PlotGUI(QWidget):
                 self.win.clear()
                 self.pl = self.win.addPlot()
                 self.legend = self.pl.addLegend()
-            self.curs1 = LinearRegionItem([0, 40])
+
+            self.pl.addItem(self.lr)
+            self.lr.sigRegionChanged.connect(self.regionSet)
 
             self.begin_idx = self.begin_line = self.data_type = self.footerskip = - \
                 1  # set to determine if a file
