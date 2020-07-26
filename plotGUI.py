@@ -18,8 +18,8 @@ from cycler import cycler
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QMainWindow, QMessageBox, QWidget, QFileDialog)
+from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
+                             QHBoxLayout, QMainWindow, QMessageBox, QWidget)
 from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
                        setConfigOptions)
 from pyqtgraph.parametertree import Parameter, ParameterTree
@@ -29,7 +29,10 @@ from pyqtgraph.parametertree import Parameter, ParameterTree
 TODO
 [X] Add comments
 [X] Allow user to select which column they'd like as their x axis
+[ ] Can remove multiple plot plot by pressing number key of plot index
+[X] Switch from try except to if else for np.loadtxt or pd.read_csv
 [ ] Add functionality to transpose data matrix
+[ ] Force selection window to move if changing x start or end
 [X] Deselect all when plotting
 """
 
@@ -577,6 +580,7 @@ class PlotGUI(QWidget):
                     self.legend = self.pl[-1].addLegend()
             elif self.plot_multiple:
                 # this will create additional plots in same window instead of re-plotting
+
                 if not hasattr(self, 'pl'):
                     self.pl = [self.win.addPlot()]
                 else:
@@ -634,11 +638,11 @@ class PlotGUI(QWidget):
                     ]
 
             else:
-                try:
+                if self.footerskip == -1:
                     self.data = np.loadtxt(self.file,
                                            delimiter=self.plot_delimiter,
                                            skiprows=self.begin_line - 1)
-                except ValueError:
+                else:
                     self.data = pd.read_csv(self.file,
                                             sep=self.plot_delimiter,
                                             header=self.begin_line - 1,
@@ -660,7 +664,7 @@ class PlotGUI(QWidget):
                 count = 0
 
                 for file in filelist:
-                    try:
+                    if self.footerskip == -1:
                         new_data = np.loadtxt(self.file,
                                               delimiter=self.plot_delimiter,
                                               skiprows=self.begin_line - 1)
@@ -671,7 +675,7 @@ class PlotGUI(QWidget):
                         else:
                             datalist = datalist + new_data
 
-                    except ValueError:
+                    else:
                         datalist = datalist + pd.read_csv(
                             file,
                             sep=self.plot_delimiter,
@@ -1026,11 +1030,10 @@ class PlotGUI(QWidget):
                     ii = self.data_types.index(key)
 
                     if ii != self.x_index:
-                        self.pl[-1].plot(
-                            self.data[:, self.x_index],
-                            self.data[:, ii],
-                            pen=mkPen(ii, width=3),
-                            name=self.data_types[ii].rstrip('\n'))
+                        self.pl[-1].plot(self.data[:, self.x_index],
+                                         self.data[:, ii],
+                                         pen=mkPen(ii, width=3),
+                                         name=self.data_types[ii].rstrip('\n'))
                         # if type(self.pl) == list:
                         #     self.pl[-1].plot(
                         #         self.data[:, self.x_index],
@@ -1063,13 +1066,13 @@ class PlotGUI(QWidget):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.close()
-        elif e.key() == Qt.Key_Enter:
+        elif e.key() == Qt.Key_Enter or e.key() == Qt.Key_Return:
             self.makePlot()
-        elif e.key(
-        ) == 16777220:  # enter for Mac, will need to find out enter for windows
+        elif e.key() == 16777249:  
+            # enter for Mac, will need to find out enter for windows
             self.makePlot()
-        # else:
-        #     QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
+        else:
+            QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
 
     def exportPNG(self):
         window = MainWindow(self)
