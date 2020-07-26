@@ -470,7 +470,7 @@ class PlotGUI(QWidget):
             self.plot_multiple = False
 
         if self.plot_multiple and hasattr(self, 'pl'):
-            self.pl.removeItem(self.lr)
+            self.pl[-1].removeItem(self.lr)
 
         self.p.param('Plot options',
                      'Plot multiple').setValue(self.plot_multiple)
@@ -573,26 +573,24 @@ class PlotGUI(QWidget):
 
             if self.plot_stack:
                 if not hasattr(self, 'pl'):
-                    self.pl = self.win.addPlot()
-                    self.legend = self.pl.addLegend()
-                else:
-                    pass
+                    self.pl = [self.win.addPlot()]
+                    self.legend = self.pl[-1].addLegend()
             elif self.plot_multiple:
                 # this will create additional plots in same window instead of re-plotting
                 if not hasattr(self, 'pl'):
                     self.pl = [self.win.addPlot()]
                 else:
-                    if type(self.pl) != list:
-                        self.pl = [self.pl]
+                    # if type(self.pl) != list:
+                    #     self.pl = [self.pl]
                     self.pl.append(self.win.addPlot())
                 self.legend = self.pl[-1].addLegend()
             else:
                 self.win.clear()
-                self.pl = self.win.addPlot()
-                self.legend = self.pl.addLegend()
+                self.pl = [self.win.addPlot()]
+                self.legend = self.pl[-1].addLegend()
 
             if not self.plot_multiple:
-                self.pl.addItem(self.lr)
+                self.pl[-1].addItem(self.lr)
                 self.lr.sigRegionChanged.connect(self.regionSet)
 
             self.begin_idx = self.begin_line = self.data_type = self.footerskip = - \
@@ -865,16 +863,18 @@ class PlotGUI(QWidget):
                     if ii != self.x_index:
                         self.data[:, ii] = np.abs(self.data[:, ii])
 
-                if type(self.pl) == list:
-                    self.pl[-1].setLogMode(True, True)
-                else:
-                    self.pl.setLogMode(True, True)
+                self.pl[-1].setLogMode(True, True)
+                # if type(self.pl) == list:
+                #     self.pl[-1].setLogMode(True, True)
+                # else:
+                #     self.pl.setLogMode(True, True)
                 xset = True
             elif "xlog" in self.each_axis:
-                if type(self.pl) == list:
-                    self.pl[-1].setLogMode(True, False)
-                else:
-                    self.pl.setLogMode(True, False)
+                self.pl[-1].setLogMode(True, False)
+                # if type(self.pl) == list:
+                #     self.pl[-1].setLogMode(True, False)
+                # else:
+                #     self.pl.setLogMode(True, False)
                 xset = True
             elif "ylog" in self.each_axis:
                 for ii in range(0, len(self.data_types)):
@@ -890,15 +890,17 @@ class PlotGUI(QWidget):
                         else:
                             self.data[:, ii] = np.abs(self.data[:, ii])
 
-                if type(self.pl) == list:
-                    self.pl[-1].setLogMode(False, True)
-                else:
-                    self.pl.setLogMode(False, True)
+                self.pl[-1].setLogMode(False, True)
+                # if type(self.pl) == list:
+                #     self.pl[-1].setLogMode(False, True)
+                # else:
+                #     self.pl.setLogMode(False, True)
             else:
-                if type(self.pl) == list:
-                    self.pl[-1].setLogMode(False, False)
-                else:
-                    self.pl.setLogMode(False, False)
+                self.pl[-1].setLogMode(False, False)
+                # if type(self.pl) == list:
+                #     self.pl[-1].setLogMode(False, False)
+                # else:
+                #     self.pl.setLogMode(False, False)
 
             if xset:
 
@@ -958,15 +960,17 @@ class PlotGUI(QWidget):
                         self.data[:, ii] = self.data[:, ii] / \
                             np.max(np.absolute(self.data[:, ii]))
 
-            if type(self.pl) == list:
-                self.pl[-1].setLabel('left', 'Magnitude (normalized)')
-            else:
-                self.pl.setLabel('left', 'Magnitude (normalized)')
+            self.pl[-1].setLabel('left', 'Magnitude (normalized)')
+            # if type(self.pl) == list:
+            #     self.pl[-1].setLabel('left', 'Magnitude (normalized)')
+            # else:
+            #     self.pl.setLabel('left', 'Magnitude (normalized)')
         else:
-            if type(self.pl) == list:
-                self.pl[-1].setLabel('left', 'Magnitude')
-            else:
-                self.pl.setLabel('left', 'Magnitude')
+            self.pl[-1].setLabel('left', 'Magnitude')
+            # if type(self.pl) == list:
+            #     self.pl[-1].setLabel('left', 'Magnitude')
+            # else:
+            #     self.pl.setLabel('left', 'Magnitude')
 
         # exception handling for start and end time cases
 
@@ -994,20 +998,26 @@ class PlotGUI(QWidget):
                     ii = self.data_types.index(key)
 
                     if ii != self.x_index:
-                        if type(self.pl) == list:
-                            self.pl[-1].plot(
-                                self.data[:, self.x_index],
-                                self.data[:, ii],
-                                pen=mkPen(ii + self.plot_count, width=3),
-                                name=self.data_types[ii].rstrip('\n') + "--" +
-                                self.plot_name)
-                        else:
-                            self.pl.plot(
-                                self.data[:, self.x_index],
-                                self.data[:, ii],
-                                pen=mkPen(ii + self.plot_count, width=3),
-                                name=self.data_types[ii].rstrip('\n') + "--" +
-                                self.plot_name)
+                        self.pl[-1].plot(
+                            self.data[:, self.x_index],
+                            self.data[:, ii],
+                            pen=mkPen(ii + self.plot_count, width=3),
+                            name=self.data_types[ii].rstrip('\n') + "--" +
+                            self.plot_name)
+                        # if type(self.pl) == list:
+                        #     self.pl[-1].plot(
+                        #         self.data[:, self.x_index],
+                        #         self.data[:, ii],
+                        #         pen=mkPen(ii + self.plot_count, width=3),
+                        #         name=self.data_types[ii].rstrip('\n') + "--" +
+                        #         self.plot_name)
+                        # else:
+                        #     self.pl.plot(
+                        #         self.data[:, self.x_index],
+                        #         self.data[:, ii],
+                        #         pen=mkPen(ii + self.plot_count, width=3),
+                        #         name=self.data_types[ii].rstrip('\n') + "--" +
+                        #         self.plot_name)
                     self.plot_count += 1
 
         else:
@@ -1016,28 +1026,37 @@ class PlotGUI(QWidget):
                     ii = self.data_types.index(key)
 
                     if ii != self.x_index:
-                        if type(self.pl) == list:
-                            self.pl[-1].plot(
-                                self.data[:, self.x_index],
-                                self.data[:, ii],
-                                pen=mkPen(ii, width=3),
-                                name=self.data_types[ii].rstrip('\n'))
-                        else:
-                            self.pl.plot(self.data[:, self.x_index],
-                                         self.data[:, ii],
-                                         pen=mkPen(ii, width=3),
-                                         name=self.data_types[ii].rstrip('\n'))
+                        self.pl[-1].plot(
+                            self.data[:, self.x_index],
+                            self.data[:, ii],
+                            pen=mkPen(ii, width=3),
+                            name=self.data_types[ii].rstrip('\n'))
+                        # if type(self.pl) == list:
+                        #     self.pl[-1].plot(
+                        #         self.data[:, self.x_index],
+                        #         self.data[:, ii],
+                        #         pen=mkPen(ii, width=3),
+                        #         name=self.data_types[ii].rstrip('\n'))
+                        # else:
+                        #     self.pl.plot(self.data[:, self.x_index],
+                        #                  self.data[:, ii],
+                        #                  pen=mkPen(ii, width=3),
+                        #                  name=self.data_types[ii].rstrip('\n'))
 
-            if type(self.pl) == list:
-                self.pl[-1].setTitle(self.plot_title)
-                self.pl[-1].enableAutoRange()
-                self.pl[-1].setLabel('bottom', self.data_types[self.x_index])
-                self.pl[-1].show()
-            else:
-                self.pl.setTitle(self.plot_title)
-                self.pl.enableAutoRange()
-                self.pl.setLabel('bottom', self.data_types[self.x_index])
-                self.pl.show()
+            self.pl[-1].setTitle(self.plot_title)
+            self.pl[-1].enableAutoRange()
+            self.pl[-1].setLabel('bottom', self.data_types[self.x_index])
+            self.pl[-1].show()
+            # if type(self.pl) == list:
+            #     self.pl[-1].setTitle(self.plot_title)
+            #     self.pl[-1].enableAutoRange()
+            #     self.pl[-1].setLabel('bottom', self.data_types[self.x_index])
+            #     self.pl[-1].show()
+            # else:
+            #     self.pl.setTitle(self.plot_title)
+            #     self.pl.enableAutoRange()
+            #     self.pl.setLabel('bottom', self.data_types[self.x_index])
+            #     self.pl.show()
 
         self.current_file = self.file
 
