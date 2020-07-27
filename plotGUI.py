@@ -3,9 +3,6 @@ This opens a gui and lets the user update with their chosen .dat
 """
 #!/opt/anaconda3/bin python3
 
-# need to make sure when creating app that I use python3 because that is in usr/local/bin, which is where my local
-# python dist and py2app are located
-
 import glob
 import platform
 import sys
@@ -24,7 +21,6 @@ from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
                        setConfigOptions)
 from pyqtgraph.parametertree import Parameter, ParameterTree
 
-# import csv_fig  # error appears when using this submodule
 """
 TODO
 [X] Add comments
@@ -368,6 +364,34 @@ class PlotGUI(QWidget):
 
         self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
 
+    def makeLinearRegion(self):
+        if not self.plot_multiple:
+
+            if all([
+                    value < np.max(self.data[:, self.x_index])
+                    and value > np.min(self.data[:, self.x_index])
+                    for value in self.region
+            ]):
+                self.lr = LinearRegionItem(
+                    values=[self.region[0], self.region[1]])
+            else:
+                try:
+                    reg = self.data[:, self.x_index][
+                        np.where(
+                            np.min(self.data[:, self.x_index]) ==
+                            self.data[:, self.x_index])[0][0] +
+                        np.shape(self.data)[0] // 200]
+                except IndexError:
+                    reg = self.data[:, self.x_index][
+                        np.where(
+                            np.min(self.data[:, self.x_index]) ==
+                            self.data[:, self.x_index])[0][0] -
+                        np.shape(self.data)[0] // 200]
+                self.lr = LinearRegionItem(
+                    values=[np.min(self.data[:, self.x_index]), reg])
+            self.pl[-1].addItem(self.lr)
+            self.lr.sigRegionChanged.connect(self.regionSet)
+
     def clearPlot(self):
         """
         This clears the whole plot window
@@ -396,12 +420,6 @@ class PlotGUI(QWidget):
             self.plot_count = 0
         except AttributeError:
             QMessageBox.about(self, "Error", "No plot to clear.")
-        # except:
-        #     QMessageBox.about(
-        #         self, "Error",
-        #         "Clear last can only clear the most recent plot. "
-        #         "There is not record of 'last' plot beside the one just cleared."
-        #     )
 
     def plotShow(self, name):
         """
@@ -479,7 +497,7 @@ class PlotGUI(QWidget):
                      'Plot multiple').setValue(self.plot_multiple)
 
     def regionString(self):
-        self.window_string = f"width: {np.abs(self.region[1]-self.region[0]):.2f}; start: {self.region[0]:.2f}; end: {self.region[1]:.2f}"
+        self.window_string = f"width: {np.format_float_scientific(np.abs(self.region[1]-self.region[0]), precision=3)}; start: {np.format_float_scientific(self.region[0], precision=3)}; end: {np.format_float_scientific(self.region[1], precision=3)}"
 
     def regionSet(self):
         self.region = self.lr.getRegion()
@@ -570,8 +588,6 @@ class PlotGUI(QWidget):
         Extracts data and sets up plotting window
         :return:
         """
-        self.lr = LinearRegionItem()
-
         try:  # handles how many plots exist and how to clear them depending on user options
 
             if self.plot_stack:
@@ -593,23 +609,24 @@ class PlotGUI(QWidget):
                 self.pl = [self.win.addPlot()]
                 self.legend = self.pl[-1].addLegend()
 
-            if not self.plot_multiple:
-                self.pl[-1].addItem(self.lr)
-                self.lr.sigRegionChanged.connect(self.regionSet)
-
             self.begin_idx = self.begin_line = self.data_type = self.footerskip = - \
                 1  # set to determine if a file
             # doesn't actually have any plottable data
 
             self.getLines()
 
+            delims = [',', ' ', ', ', '\t']
+            delim_index = 0
+
+            while self.begin_line == -1:
+                self.plot_delimiter = delims[delim_index]
+                self.getLines()
+                delim_index += 1
+
             if self.begin_line == -1:
                 QMessageBox.about(
                     self, "Error",
-                    "Delimiter not in file. Attempting to use csv.")
-                self.plot_delimiter = ','
-
-                self.getLines()
+                    "Delimiter not in file. Could not auto-detect.")
 
             if not self.data_types:  # used to make index column if file doesn't have it
                 try:
@@ -996,6 +1013,8 @@ class PlotGUI(QWidget):
                 self.p.param('Plot options',
                              'End x').setValue("Default (x[-1])")
 
+        self.makeLinearRegion()
+
         if self.plot_stack:  # plots overtop of last and plots in new color
             for key in self.plot_show:
                 if self.plot_show[key]:
@@ -1068,11 +1087,11 @@ class PlotGUI(QWidget):
             self.close()
         elif e.key() == Qt.Key_Enter or e.key() == Qt.Key_Return:
             self.makePlot()
-        elif e.key() == 16777249:  
+        elif e.key() == 16777249:
             # enter for Mac, will need to find out enter for windows
             self.makePlot()
-        else:
-            QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
+        # else:
+        #     QMessageBox.about(self, "Error", f"No command bound to {e.key()}.")
 
     def exportPNG(self):
         window = MainWindow(self)
