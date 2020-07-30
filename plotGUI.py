@@ -20,15 +20,14 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
 from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
                        setConfigOptions)
 from pyqtgraph.parametertree import Parameter, ParameterTree
-
 """
 TODO
 [X] Add comments
 [X] Allow user to select which column they'd like as their x axis
-[ ] Can remove multiple plot plot by pressing number key of plot index
+[X] Can remove multiple plot plot by pressing number key of plot index
 [X] Switch from try except to if else for np.loadtxt or pd.read_csv
 [ ] Add functionality to transpose data matrix
-[ ] Force selection window to move if changing x start or end
+[X] Force selection window to move if changing x start or end
 [X] Deselect all when plotting
 """
 
@@ -63,7 +62,7 @@ class PlotGUI(QWidget):
         self.plot_avg = False
         self.plot_stack = False
         self.plot_normal = False
-        self.data_types = ['null']
+        self.data_types = ['']
         self.plot_count = 0
         self.plot_delimiter = ','
         self.start_x = "Default (x[0])"
@@ -76,6 +75,7 @@ class PlotGUI(QWidget):
         self.real_axes = False
         self.select_all = True
         self.setAcceptDrops(True)
+        self.clear_choice = -1
         self.region = [0, 0]
         self.regionString()
 
@@ -94,65 +94,56 @@ class PlotGUI(QWidget):
             'Plot options',
             'type':
             'group',
-            'children': [
-                {
-                    'name': 'Select all',
-                    'type': 'bool',
-                    'value': self.select_all,
-                    'tip': "Turns off all plot lines"
-                },
-                {
-                    'name': 'Plot multiple',
-                    'type': 'bool',
-                    'value': self.plot_multiple,
-                    'tip': "This will plot multiple charts"
-                },
-                {
-                    'name': 'Average',
-                    'type': 'bool',
-                    'value': self.plot_avg,
-                    'tip': "This will average similarly named files"
-                },
-                {
-                    'name': 'Normalize',
-                    'type': 'bool',
-                    'value': self.plot_normal,
-                    'tip': "This will normalize data"
-                },
-                {
-                    'name': 'Plot stack',
-                    'type': 'bool',
-                    'value': self.plot_stack,
-                    'tip': "This will stack plots"
-                },
-                {
-                    'name': 'Start x',
-                    'type': 'str',
-                    'value': self.start_x,
-                    'tip': "This will start the plot at x val entered"
-                },
-                {
-                    'name': 'End x',
-                    'type': 'str',
-                    'value': self.end_x,
-                    'tip': "This will end the plot at x val entered"
-                },
-                {
-                    'name': 'Axis scale',
-                    'type': 'str',
-                    'value': self.plot_axes,
-                    'tip':
-                    "xlin, ylin, xlog, ylog; default x,y lin if unspecified"
-                },
-                # {'name': 'Use filename as name', 'type': 'bool', 'value': self.plot_name, 'tip':
-                #     "Uses data name in file if false, uses plot title if true"},
-                {
-                    'name': 'Delimiter',
-                    'type': 'str',
-                    'value': self.plot_delimiter,
-                    'tip': "Spacing in data file"
-                }
-            ]
+            'children': [{
+                'name': 'Select all',
+                'type': 'bool',
+                'value': self.select_all,
+                'tip': "Turns off all plot lines"
+            }, {
+                'name': 'Plot multiple',
+                'type': 'bool',
+                'value': self.plot_multiple,
+                'tip': "This will plot multiple charts"
+            }, {
+                'name': 'Average',
+                'type': 'bool',
+                'value': self.plot_avg,
+                'tip': "This will average similarly named files"
+            }, {
+                'name': 'Normalize',
+                'type': 'bool',
+                'value': self.plot_normal,
+                'tip': "This will normalize data"
+            }, {
+                'name': 'Plot stack',
+                'type': 'bool',
+                'value': self.plot_stack,
+                'tip': "This will stack plots"
+            }, {
+                'name': 'Start x',
+                'type': 'str',
+                'value': self.start_x,
+                'tip': "This will start the plot at x val entered"
+            }, {
+                'name': 'End x',
+                'type': 'str',
+                'value': self.end_x,
+                'tip': "This will end the plot at x val entered"
+            }, {
+                'name':
+                'Axis scale',
+                'type':
+                'str',
+                'value':
+                self.plot_axes,
+                'tip':
+                "xlin, ylin, xlog, ylog; default x,y lin if unspecified"
+            }, {
+                'name': 'Delimiter',
+                'type': 'str',
+                'value': self.plot_delimiter,
+                'tip': "Spacing in data file"
+            }]
         }]
 
         self.filestuff = [{
@@ -162,23 +153,47 @@ class PlotGUI(QWidget):
             'group',
             'children': [{
                 'name': 'Update plot',
-                'type': 'action'
+                'type': 'action',
+                'tip': 'Draws new plot.'
+            }, {
+                'name':
+                'Clear',
+                'type':
+                'int',
+                'value':
+                self.clear_choice,
+                'tip':
+                'Enter index of plot to clear. Starting from the left at zero. Negative indexing is permitted.'
+            }, {
+                'name':
+                'Clear chosen',
+                'type':
+                'action',
+                'tip':
+                'Clears the plot with index specified in above line.'
             }, {
                 'name': 'Clear all',
-                'type': 'action'
+                'type': 'action',
+                'tip': 'Clears entire plotting window.'
             }, {
-                'name': 'Clear last',
-                'type': 'action'
-            }, {
-                'name': 'Choose file',
-                'type': 'action'
+                'name':
+                'Choose file',
+                'type':
+                'action',
+                'tip':
+                'Opens dialog to choose datafile. File may also be dragged into window.'
             }, {
                 'name': 'File:',
                 'type': 'str',
-                'value': self.file
+                'value': self.file,
+                'tip': 'File selected for plotting.'
             }, {
-                'name': 'Create png',
-                'type': 'action'
+                'name':
+                'Create png',
+                'type':
+                'action',
+                'tip':
+                'Opens sub-GUI for Matplotlib plotting and .png export.'
             }]
         }]
 
@@ -265,7 +280,8 @@ class PlotGUI(QWidget):
                      'Choose file').sigActivated.connect(self.chooseFile)
         self.f.param('File', 'Update plot').sigActivated.connect(self.makePlot)
         self.f.param('File', 'Clear all').sigActivated.connect(self.clearPlot)
-        self.f.param('File', 'Clear last').sigActivated.connect(self.clearLast)
+        self.f.param('File',
+                     'Clear chosen').sigActivated.connect(self.clearSelection)
         self.f.param('File', 'Create png').sigActivated.connect(self.exportPNG)
 
         self.p.param('Plot options',
@@ -314,7 +330,7 @@ class PlotGUI(QWidget):
 
                 if not self.plot_stack and not self.plot_multiple and hasattr(
                         self, 'pl'):
-                    self.clearLast()
+                    self.clearSelection()
 
                 if len(files) > 1:
                     self.plot_stack = True
@@ -376,17 +392,17 @@ class PlotGUI(QWidget):
                     values=[self.region[0], self.region[1]])
             else:
                 try:
-                    reg = self.data[:, self.x_index][
-                        np.where(
-                            np.min(self.data[:, self.x_index]) ==
-                            self.data[:, self.x_index])[0][0] +
-                        np.shape(self.data)[0] // 200]
+                    reg = self.data[:, self.x_index][np.where(
+                        np.min(self.data[:, self.x_index]) ==
+                        self.data[:, self.x_index])[0][0] +
+                                                     np.shape(self.data)[0] //
+                                                     200]
                 except IndexError:
-                    reg = self.data[:, self.x_index][
-                        np.where(
-                            np.min(self.data[:, self.x_index]) ==
-                            self.data[:, self.x_index])[0][0] -
-                        np.shape(self.data)[0] // 200]
+                    reg = self.data[:, self.x_index][np.where(
+                        np.min(self.data[:, self.x_index]) ==
+                        self.data[:, self.x_index])[0][0] -
+                                                     np.shape(self.data)[0] //
+                                                     200]
                 self.lr = LinearRegionItem(
                     values=[np.min(self.data[:, self.x_index]), reg])
             self.pl[-1].addItem(self.lr)
@@ -404,22 +420,29 @@ class PlotGUI(QWidget):
             QMessageBox.about(self, "Error", "No plot to clear.")
         self.plot_count = 0
 
-    def clearLast(self):  # known bug where clear last clears
+    def clearSelection(self):  # known bug where clear last clears
         # all if plot multiple has been deselected
         """
-        This clears the last plot made. Can't clear more than one plot though, as self.pl no longer exists after it
-        was cleared
+        This clears the last plot made.
         :return:
         """
-        try:
-            if self.plot_multiple:
-                self.win.removeItem(self.pl[-1])
-                self.pl.pop(-1)
-            else:
-                self.clearPlot()
-            self.plot_count = 0
-        except AttributeError:
-            QMessageBox.about(self, "Error", "No plot to clear.")
+        self.f.param('File', 'File:').setValue(self.file.split('/')[-1])
+        self.clear_choice = self.f.param('File', 'Clear').value()
+
+        if type(self.clear_choice) == int:
+            try:
+                if self.clear_choice <= len(self.pl):
+                    if self.plot_multiple:
+                        self.win.removeItem(self.pl[self.clear_choice])
+                        self.pl.pop(self.clear_choice)
+                    else:
+                        self.clearPlot()
+                    self.plot_count = 0
+            except (AttributeError, IndexError):
+                QMessageBox.about(self, "Error", "No plot to clear.")
+        else:
+            QMessageBox.about(self, "Error", "Invalid plot selection.")
+        self.f.param('File', 'Clear').setValue(-1)
 
     def plotShow(self, name):
         """
