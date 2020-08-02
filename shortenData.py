@@ -58,9 +58,10 @@ def shorten(start=0, end=-1, directory='.'):
             percent = count*100 // num
             if percent > oldpercent:
                 ps = '|' + '='*(percent//2) + '-'*(50 - (percent//2)) + '|'
-                print(f"{ps} {percent}% done", end='\r')
+                print(f"{ps} {percent}% complete", end='\r')
                 oldpercent = percent
             count += 1
+    print(f"{'|' + '='*50 + '|'} 100% complete")
    
 
 if __name__ == "__main__":
