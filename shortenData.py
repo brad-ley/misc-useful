@@ -8,6 +8,9 @@ from readDataFile import read
 
 
 def shrink(filename, start=0, end=-1, directory='.'):
+    """
+    Selects submatrix for writing to new file
+    """
     header, data = read(filename)
     data = data[start:end, :]
     savename = directory + '/short/' + filename
@@ -15,6 +18,9 @@ def shrink(filename, start=0, end=-1, directory='.'):
 
 
 def shorten(start=0, end=-1, directory='.'):
+    """
+    This function will select the specified number of rows from an EPR spectrometer file and write a new file into /short/ directory for all files in directory specfied
+    """
     filelist = [
         ii for ii in os.listdir(directory)
         if ii.endswith('.dat')
