@@ -34,7 +34,15 @@ def read(filename, delimiter=','):
         header += line
 
     data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
-    if data[0, 1] > data[-1, 1]:
-        data = np.flipud(data)
+    for line in header.split('\n')[::-1]:
+        if line != '':
+            datatypes = line
+            break
+
+    idx_list = [('Field' in ii.strip()) for ii in datatypes.split(delimiter)]
+    if 1 in idx_list:
+        idx = idx_list.index(1)
+        if data[idx, 0] < data[idx, -1]:
+            data = np.flipud(data)
 
     return header, data

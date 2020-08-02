@@ -5,34 +5,29 @@ import numpy as np
 
 sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
 from readDataFile import read
+from statusBar import statusBar
 
 
-def shrink(filename, start=0, end=-1, directory='.'):
-    """
-    Selects submatrix for writing to new file
-    """
-    header, data = read(filename)
+def shrink(filename, start=0, end=-1, directory='./'):
+    header, data = read(directory + filename)
     data = data[start:end, :]
     savename = directory + '/short/' + filename
     np.savetxt(savename, data, header=header, delimiter=', ')
 
 
-def shorten(start=0, end=-1, directory='.'):
-    """
-    This function will select the specified number of rows from an EPR spectrometer file and write a new file into /short/ directory for all files in directory specfied
-    """
+def shorten(start=0, end=-1, directory='./'):
     filelist = [
         ii for ii in os.listdir(directory)
         if ii.endswith('.dat')
     ]
     try:
-        os.makedirs(directory + '/short/')
+        os.makedirs(directory + 'short/')
     except FileExistsError:
         # directory already exists
         pass
 
     shortfilelist = [
-        ii for ii in os.listdir(directory + "/short/")
+        ii for ii in os.listdir(directory + "short/")
         if (ii.endswith('.dat'))
     ]
 
@@ -40,12 +35,13 @@ def shorten(start=0, end=-1, directory='.'):
     count = 0 
     oldpercent = 0
     percent = 0
-    ps = '|' + '-'*50 + '|'
-    print(f"{ps} {percent}% done", end='\r')
+    statusBar(0)
+    # ps = '|' + '-'*50 + '|'
+    # print(f"{ps} {percent}% done", end='\r')
     for file in filelist:
         if file.startswith('M') and file not in shortfilelist:
             shrink(file, start=start, end=end, directory=directory)
-            lines = open(directory + '/short/' + file, 'r').readlines()
+            lines = open(directory + 'short/' + file, 'r').readlines()
             for line in lines:
                 idx = lines.index(line)
                 if line.startswith('# '):
@@ -57,18 +53,20 @@ def shorten(start=0, end=-1, directory='.'):
                     if lines[blank_idx] == '\n':
                         lines[blank_idx] = ''
                     break
-            newfile = open(directory + '/short/' + file, 'w')
+            newfile = open(directory + 'short/' + file, 'w')
             for line in lines:
                 newfile.write(line)
             newfile.close()
             percent = count*100 // num
             if percent > oldpercent:
-                ps = '|' + '='*(percent//2) + '-'*(50 - (percent//2)) + '|'
-                print(f"{ps} {percent}% complete", end='\r')
+                statusBar(percent)
+                # ps = '|' + '='*(percent//2) + '-'*(50 - (percent//2)) + '|'
+                # print(f"{ps} {percent}% complete", end='\r')
                 oldpercent = percent
             count += 1
-    print(f"{'|' + '='*50 + '|'} 100% complete")
+    # print(f"{'|' + '='*50 + '|'} 100% complete")
+    statusBar(100)
    
 
 if __name__ == "__main__":
-    shorten(start=10000, directory='./fold')
+    shorten(start=10000)
