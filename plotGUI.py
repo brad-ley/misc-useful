@@ -382,6 +382,8 @@ class PlotGUI(QWidget):
 
     def makeLinearRegion(self):
         if not self.plot_multiple:
+            if self.plot_stack:
+                self.pl[-1].removeItem(self.lr)
 
             if all([
                     value < np.max(self.data[:, self.x_index])

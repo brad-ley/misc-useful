@@ -3,7 +3,7 @@ import re
 
 import numpy as np
 
-target_directory = '/Volumes/GoogleDrive/My Drive/Research/Data/2020-07-12/'
+target_directory = '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/'
 
 if not target_directory:
     target_directory = os.getcwd()
