@@ -1,5 +1,6 @@
 test.py
 *.txt
+!requirements.txt
 overlay_middles.py
 .DS_Store
 # Byte-compiled / optimized / DLL files
