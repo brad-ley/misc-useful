@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import integrate, signal
+from scipy import integrate, optimize, signal
 
 
 def makeAbsDisp(targ='./', keyw='uM'):
@@ -51,7 +51,6 @@ def makeAbsDisp(targ='./', keyw='uM'):
 
         for ll in range(2, np.shape(curr_data)[1]):
             dat = signal.detrend(curr_data[:, ll])
-            print(ll, np.where(np.abs(dat) == np.max(np.abs(dat))))
             middle_averages[ll] = np.abs(
                 np.average(
                     dat[np.where(np.abs(dat) == np.max(np.abs(dat)))[0][0] -
@@ -60,7 +59,8 @@ def makeAbsDisp(targ='./', keyw='uM'):
                         int(np.shape(dat)[0] / 10)]))
             maxes[ll] = np.max(np.abs(dat))
 
-            dat -= np.min(dat)
+            dat -= np.average(
+                np.hstack((dat[:len(dat) // 4], dat[3 * len(dat) // 4:])))
 
             curr_data[:, ll] = np.copy(dat)
         sorted_average = [
@@ -96,6 +96,7 @@ def makeAbsDisp(targ='./', keyw='uM'):
             print('flipped abs')
             phased_absorp = -1 * phased_absorp
 
+        print('---------------------------------------')
         curr_data[:, 2] = phased_disp[:]
         curr_data[:, 4] = phased_absorp[:]
 
@@ -108,8 +109,9 @@ def makeAbsDisp(targ='./', keyw='uM'):
         name_keyw = ''.join(
             ch for ch in str([ii for ii in file.split('_') if keyw in ii])
             if ch.isdigit())
-        print(name_keyw + keyw)
-        print('---------------------------------------')
+
+        if name_keyw == '':
+            name_keyw = '0'
 
         disp_name = targ + 'dispersion_' + \
             name_keyw + keyw + '_exp.txt'
@@ -141,6 +143,7 @@ def calibrate(targ='./', keyw="uM"):
     """
     x = []
     y = []
+    e = []
 
     for file in sorted(
         [
@@ -153,35 +156,36 @@ def calibrate(targ='./', keyw="uM"):
             reverse=True):
         # because the dispersive lineshape is nicer, use that and Hilbert
         # transform it
-        base_scaling = 3.15
 
         name = ''.join(
             ch for ch in str([ii for ii in file.split('_') if keyw in ii])
             if ch.isdigit())
 
-        if name == '200':
-            DA = '31.5DA'
-            scaling = 3.15
-        elif name == '150':
-            DA = '36DA'
-            scaling = 3.6
+        if name == '0':
+            DA = '27'
+
+        if name == '50':
+            DA = '34.25'
         elif name == '100':
-            DA = '38DA'
-            scaling = 3.8
-        elif name == '50':
-            DA = '34.25DA'
-            scaling = 3.425
+            DA = '38'
+        elif name == '150':
+            DA = '36'
+        elif name == '200':
+            DA = '31.5'
+
+        if DA:
+            scaling = 10**(float(DA) / 10) / 10**(31.5 / 10)
+            leg_name = name + keyw
         else:
-            DA = 'noDA'
-            scaling = "NaN"
+            scaling = 1
+            leg_name = name + keyw + " " + DA + "DA"
 
         dat = np.loadtxt(file, skiprows=1, delimiter=',')
-        dispersive = dat[:, 1] * np.exp(scaling)/np.exp(base_scaling)
+        dispersive = dat[:, 1] * scaling
         absorptive = -1 * np.imag(signal.hilbert(dispersive))
         absorption = integrate.cumtrapz(absorptive)
+        absorp_err = np.sqrt(len(absorption)) * np.std(absorption)
         integrate_abs = integrate.trapz(absorption)
-
-        leg_name = name + keyw + ' ' + DA
 
         plt.figure('Absorption')
         plt.plot(dat[:len(absorption), 0], absorption, label=leg_name)
@@ -190,34 +194,54 @@ def calibrate(targ='./', keyw="uM"):
         plt.plot(dat[:len(absorptive), 0], absorptive, label=leg_name)
         plt.legend()
 
-        x.append(float(name))
-        y.append(integrate_abs)
+        if name != '0':
+            x.append(float(name))
+            y.append(integrate_abs)
+            e.append(absorp_err)
+        else:
+            unknown = integrate_abs
 
     plt.figure('Absorption')
-    plt.yticks([])
+    plt.yticks([0])
     plt.ylabel('Signal (arb. u)')
     plt.xlabel('Field (T)')
     plt.savefig(targ + 'absorption.png')
 
     plt.figure('Dispersion')
-    plt.yticks([])
+    plt.yticks([0])
     plt.ylabel('Signal (arb. u)')
     plt.xlabel('Field (T)')
     plt.savefig(targ + 'dispersion.png')
 
     plt.figure('Calibration')
-    plt.scatter(x, y)
+    popt, pcov = optimize.curve_fit(func, x, y)
+    plt.plot(np.linspace(0, 200, 1000), func(np.linspace(0, 200, 1000), *popt),
+             'k--')
+    plt.text(10, 0.7, f"Fit: y={popt[0]:.2E}x")
+    conc = unknown / popt[0]
+    plt.scatter(conc, unknown, c='red')
+    plt.annotate(f"Gd-LOV: {conc:.2f} $\mu M$", (conc, unknown),
+                 (conc + 5, unknown - 0.025),
+                 c='red')
+    plt.errorbar(x, y, yerr=e, capsize=3, fmt='ko')
+    plt.grid()
+    plt.yticks(np.linspace(0, 0.8, 9))
     plt.xlabel('Concentration ($\mu M$)')
     plt.ylabel('Double integral of absorption')
+    plt.title('Gd-DOTA calibration curve')
     plt.savefig(targ + 'calibration.png')
-    plt.show()
+    # plt.show()
+
+
+def func(x, m):
+    return m * np.array(x)
 
 
 if __name__ == "__main__":
-    # makeAbsDisp(
-    #     targ=
-    #     '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/',
-    #     )
+    makeAbsDisp(
+        targ=
+        '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/',
+    )
     calibrate(
         targ=
         '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/'
