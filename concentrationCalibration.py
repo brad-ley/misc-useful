@@ -31,7 +31,7 @@ def makeAbsDisp(targ='./', keyw='uM'):
         for ii in sorted(file_length.items(), key=lambda x: x[1], reverse=True)
     ]
 
-    for file in files:
+    for file in files_sort:
         lines = [ii.strip() for ii in open(file, 'r').readlines()]
 
         for line in lines:
@@ -39,7 +39,7 @@ def makeAbsDisp(targ='./', keyw='uM'):
 
         if file == files_sort[0]:
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
-            longest_data[:, 1] += 8.57
+            longest_data[:, 1] += 8.62
             middle_B = longest_data[int(
                 np.where(longest_data[:, 2] ==
                          np.max(longest_data[:, 2]))[0][0]), 1]
@@ -113,10 +113,31 @@ def makeAbsDisp(targ='./', keyw='uM'):
         if name_keyw == '':
             name_keyw = '0'
 
+        if 'sample' in file.lower():
+            samp = ''.join([
+                ch for ch in str(
+                    [ii for ii in file.split('_') if 'sample' in ii.lower()])
+                if ch.isdigit()
+            ])
+            additional = f'_sample{samp}'
+        else:
+            additional = ''
+
+        if 'DA' in file:
+            DA = ''.join([
+                ch for ch in str([
+                    file.split('_')[file.split('_').index(ii) - 1]
+                    for ii in file.split('_') if 'DA' in ii
+                ])]).replace('p', '.')
+            DA = float(''.join([ii for ii in DA if ii.isdigit() or ii == '.']))
+            DAadd = f'_DA{DA}'
+        else:
+            DAadd = ''
+
         disp_name = targ + 'dispersion_' + \
-            name_keyw + keyw + '_exp.txt'
+            name_keyw + keyw + additional + DAadd + '_exp.txt'
         abs_name = targ + 'absorption_' + \
-            name_keyw + keyw + '_exp.txt'
+            name_keyw + keyw + additional + DAadd + '_exp.txt'
 
         disp_file = open(disp_name, 'w')
         abs_file = open(abs_name, 'w')
@@ -144,16 +165,22 @@ def calibrate(targ='./', keyw="uM"):
     x = []
     y = []
     e = []
+    unknown = []
+    samples = []
 
-    for file in sorted(
+    filelist = sorted(
         [
             targ + ii for ii in os.listdir(targ)
             if ii.startswith('dispersion') and ii.endswith('.txt')
         ],
-            key=lambda f: float(''.join(ch for ch in str(
-                [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
-                                        if ch.isdigit())),
-            reverse=True):
+        key=lambda f: float(''.join(ch for ch in str(
+            [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
+                                    if ch.isdigit())),
+        reverse=True)
+
+    base_DA = -1
+
+    for file in filelist:
         # because the dispersive lineshape is nicer, use that and Hilbert
         # transform it
 
@@ -161,24 +188,31 @@ def calibrate(targ='./', keyw="uM"):
             ch for ch in str([ii for ii in file.split('_') if keyw in ii])
             if ch.isdigit())
 
-        if name == '0':
-            DA = '27'
+        DA = float(''.join(
+            ch for ch in str([ii for ii in file.split('_') if 'DA' in ii])
+            if ch.isdigit() or ch == '.'))
 
-        if name == '50':
-            DA = '34.25'
-        elif name == '100':
-            DA = '38'
-        elif name == '150':
-            DA = '36'
-        elif name == '200':
-            DA = '31.5'
+        samp = ''.join(
+            ch for ch in str([ii for ii in file.split('_') if 'sample' in ii])
+            if ch.isdigit())
+
+        if samp:
+            samp = float(samp)
+
+        if base_DA == -1 and DA:
+            base_DA = DA
 
         if DA:
-            scaling = 10**(float(DA) / 10) / 10**(31.5 / 10)
+            scaling = 10**(float(DA) / 10) / 10**(base_DA / 10)
             leg_name = name + keyw
         else:
             scaling = 1
             leg_name = name + keyw + " " + DA + "DA"
+            
+        if samp:
+            leg_name = f"Samp {int(samp)}"
+
+        print(f'DA is {DA}, base DA is {base_DA}, scaling is {scaling}')
 
         dat = np.loadtxt(file, skiprows=1, delimiter=',')
         dispersive = dat[:, 1] * scaling
@@ -194,41 +228,47 @@ def calibrate(targ='./', keyw="uM"):
         plt.plot(dat[:len(absorptive), 0], absorptive, label=leg_name)
         plt.legend()
 
-        if name != '0':
+        if 'sample' not in file:
             x.append(float(name))
             y.append(integrate_abs)
             e.append(absorp_err)
         else:
-            unknown = integrate_abs
+            unknown.append(integrate_abs)
+            samples.append(samp)
 
     plt.figure('Absorption')
     plt.yticks([0])
-    plt.ylabel('Signal (arb. u)')
+    plt.ylabel('Integrated absorption (arb. u)')
     plt.xlabel('Field (T)')
     plt.savefig(targ + 'absorption.png')
 
     plt.figure('Dispersion')
     plt.yticks([0])
-    plt.ylabel('Signal (arb. u)')
+    plt.ylabel('Integrated dispersion (arb. u)')
     plt.xlabel('Field (T)')
     plt.savefig(targ + 'dispersion.png')
 
     plt.figure('Calibration')
     popt, pcov = optimize.curve_fit(func, x, y)
-    plt.plot(np.linspace(0, 200, 1000), func(np.linspace(0, 200, 1000), *popt),
+    conc = unknown / popt[0]
+    end = np.max(np.hstack((x, conc)))
+    plt.plot(np.linspace(0, end, 1000), func(np.linspace(0, end, 1000), *popt),
              'k--')
     plt.text(10, 0.7, f"Fit: y={popt[0]:.2E}x")
-    conc = unknown / popt[0]
     plt.scatter(conc, unknown, c='red')
-    plt.annotate(f"Gd-LOV: {conc:.2f} $\mu M$", (conc, unknown),
-                 (conc + 5, unknown - 0.025),
-                 c='red')
+
+    for ii, txt in enumerate(samples):
+        plt.annotate(f"Samp {int(txt)}: {conc[ii]:.2f} $\mu M$",
+                     (conc[ii], unknown[ii]),
+                     (conc[ii] + 5, unknown[ii] - 0.025),
+                     c='red')
     plt.errorbar(x, y, yerr=e, capsize=3, fmt='ko')
     plt.grid()
-    plt.yticks(np.linspace(0, 0.8, 9))
+    # plt.yticks(np.linspace(0, 0.8, 9))
     plt.xlabel('Concentration ($\mu M$)')
     plt.ylabel('Double integral of absorption')
     plt.title('Gd-DOTA calibration curve')
+    plt.tight_layout()
     plt.savefig(targ + 'calibration.png')
     # plt.show()
 
