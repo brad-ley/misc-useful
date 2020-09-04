@@ -17,7 +17,10 @@ def isNumber(num):
 
 def read(filename, delimiter=','):
     """
-    Takes file from EPR computer, removes header, returns numpy array
+    Takes file from EPR computer, removes header, returns header, numpy array
+    :args: filename
+    :kwargs: delimiter
+    :return: header, data
     """
     file = open(filename, 'r').readlines()
     

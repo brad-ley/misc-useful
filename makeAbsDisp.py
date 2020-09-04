@@ -3,7 +3,7 @@ import os
 from scipy import signal
 
 
-def makeAbsDisp(targ='./', keyw='uM'):
+def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True):
     """
     This finds the absorption and dispersion lines from the input 4-line
     rephased cwEPR spectra and makes new files for the absorption and
@@ -28,6 +28,8 @@ def makeAbsDisp(targ='./', keyw='uM'):
         ii[0]
         for ii in sorted(file_length.items(), key=lambda x: x[1], reverse=True)
     ]
+    
+    count = 0
 
     for file in files_sort:
         lines = [ii.strip() for ii in open(file, 'r').readlines()]
@@ -104,12 +106,23 @@ def makeAbsDisp(targ='./', keyw='uM'):
         curr_data[:, 1] -= diff_B
 
         # print([ii for ii in file.split('_') if keyw in ii])
-        name_keyw = ''.join(
-            ch for ch in str([ii for ii in file.split('_') if keyw in ii])
-            if ch.isdigit())
 
-        if name_keyw == '':
-            name_keyw = '0'
+        if numerical_keyw:
+            name_keyw = ''.join(
+                ch for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
+                if ch.isdigit())
+
+            if name_keyw == '':
+                name_keyw = '0'
+        else:
+            name_keyw = ''.join(
+                ch for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
+                if ch not in list(keyw))
+
+            if name_keyw == '':
+                name_keyw = f"{keyw}{count}"
+                count += 1
+
 
         if 'sample' in file.lower():
             samp = ''.join([
