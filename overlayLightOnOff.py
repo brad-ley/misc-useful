@@ -25,6 +25,7 @@ def compare(targ='./'):
         plt.plot(data[:, 0], data[:, 1], label=legend)
 
     plt.legend()
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     plt.savefig('compared.png')
     plt.show()
 
