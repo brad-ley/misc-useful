@@ -3,13 +3,15 @@ import os
 from scipy import signal
 
 
-def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True):
+def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
     """
     This finds the absorption and dispersion lines from the input 4-line
     rephased cwEPR spectra and makes new files for the absorption and
     dispersion spectra of each
     :param targ: directory of choice
     :param keyw: varied parameter
+    :param numerical_keyw: return numeric output by default, string if false
+    :param field: B0 field value to add to field sweep
     """
 
     files = [
@@ -39,7 +41,7 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True):
 
         if file == files_sort[0]:
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
-            longest_data[:, 1] += 8.62
+            longest_data[:, 1] += field 
             middle_B = longest_data[int(
                 np.where(longest_data[:, 2] ==
                          np.max(longest_data[:, 2]))[0][0]), 1]
