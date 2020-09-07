@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import re
 import sys
 from scipy.interpolate import interp1d
-from scipy.signal import decimate
+from scipy.signal import decimate, savgol_filter
 
 sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
 from readDataFile import read
@@ -68,6 +68,8 @@ def subtract(targ='./', background=0, experiment=1, downsample=10):
     plt.figure('True data')
     plt.plot(data[2:, 0], true_data, label=f"{targ.split('/')[-2]}nm")
     plt.plot(data[2::downsample, 0], decimate(true_data, downsample), label=f"{targ.split('/')[-2]}nm {downsample}x downsample")
+    yy = savgol_filter(true_data, len(true_data)//downsample, 2)
+    plt.plot(data[2:, 0], yy, label='savgol_filter')
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
     plt.ylabel(datatypes[1])
     plt.yticks([])
@@ -78,4 +80,4 @@ def subtract(targ='./', background=0, experiment=1, downsample=10):
 
 
 if __name__ == "__main__":
-    subtract(targ='/Volumes/GoogleDrive/My Drive/Research/Data/2020/09/2020-09-06_Flash/PRA174_E108Q_olig/410')
+    subtract(targ='/Volumes/GoogleDrive/My Drive/Research/Data/2020/09/2020-09-06_Flash/PRA174_E108Q_E50Q/590')
