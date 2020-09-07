@@ -13,6 +13,8 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
     :param numerical_keyw: return numeric output by default, string if false
     :param field: B0 field value to add to field sweep
     """
+    if not targ.endswith('/'):
+        targ += '/'
 
     files = [
         targ + ii for ii in os.listdir(targ) if ii.endswith('ephased.dat')
