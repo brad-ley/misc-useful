@@ -1,9 +1,16 @@
-import numpy as np
 import os
+
+import numpy as np
 from scipy import signal
 
 
-def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
+def make(targ='./',
+         keyw='uM',
+         numerical_keyw=True,
+         file_suffix='rephased.dat',
+         field=8.57,
+         center_sect=10,
+         center=True):
     """
     This finds the absorption and dispersion lines from the input 4-line
     rephased cwEPR spectra and makes new files for the absorption and
@@ -11,14 +18,16 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
     :param targ: directory of choice
     :param keyw: varied parameter
     :param numerical_keyw: return numeric output by default, string if false
+    :param file_suffix: select the files that end in this string 
     :param field: B0 field value to add to field sweep
+    :param center_sect: take the middle 1/nth when n is the argument
     """
+
     if not targ.endswith('/'):
         targ += '/'
 
-    files = [
-        targ + ii for ii in os.listdir(targ) if ii.endswith('ephased.dat')
-    ]
+    files = [targ + ii for ii in os.listdir(targ) if ii.endswith(file_suffix)]
+
     file_length = {}
 
     for file in files:
@@ -32,7 +41,7 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
         ii[0]
         for ii in sorted(file_length.items(), key=lambda x: x[1], reverse=True)
     ]
-    
+
     count = 0
 
     for file in files_sort:
@@ -43,10 +52,11 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
 
         if file == files_sort[0]:
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
-            longest_data[:, 1] += field 
+            longest_data[:, 1] += field
             middle_B = longest_data[int(
-                np.where(longest_data[:, 2] ==
-                         np.max(longest_data[:, 2]))[0][0]), 1]
+                np.where(longest_data[:, 2] == np.max(longest_data[:,
+                                                                   2]))[0][0]),
+                                    1]
 
         curr_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
 
@@ -58,9 +68,9 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
             middle_averages[ll] = np.abs(
                 np.average(
                     dat[np.where(np.abs(dat) == np.max(np.abs(dat)))[0][0] -
-                        int(np.shape(dat)[0] / 10):np.where(
+                        int(np.shape(dat)[0] / center_sect):np.where(
                             np.abs(dat) == np.max(np.abs(dat)))[0][0] +
-                        int(np.shape(dat)[0] / 10)]))
+                        int(np.shape(dat)[0] / center_sect)]))
             maxes[ll] = np.max(np.abs(dat))
 
             dat -= np.average(
@@ -82,11 +92,13 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
 
         phased_disp = np.copy(curr_data[:, disp_idx])
         phased_absorp = np.copy(curr_data[:, abs_idx])
-        print(file.split('/')[-1],
-              middle_averages,
-              maxes,
-              sorted_average,
-              sep='\n')
+        print(
+            file.split('/')[-1],
+            # middle_averages,
+            # maxes,
+            # sorted_average,
+            sep='\n',
+        )
         print(disp_idx, abs_idx)
 
         if np.abs(np.min(phased_disp)) > np.max(phased_disp):
@@ -104,29 +116,34 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
         curr_data[:, 2] = phased_disp[:]
         curr_data[:, 4] = phased_absorp[:]
 
-        curr_B = curr_data[int(
-            np.where(curr_data[:, 2] == np.max(curr_data[:, 2]))[0][0]), 1]
-        diff_B = curr_B - middle_B
+        curr_B = curr_data[
+            int(np.where(curr_data[:, 2] == np.max(curr_data[:, 2]))[0][0]), 1]
+
+        if center:
+            diff_B = curr_B - middle_B
+        else:
+            diff_B = 0
         curr_data[:, 1] -= diff_B
 
         # print([ii for ii in file.split('_') if keyw in ii])
 
         if numerical_keyw:
             name_keyw = ''.join(
-                ch for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
-                if ch.isdigit())
+                ch
+                for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
+                if ch.isdigit() or ch == 'p').replace('p','.')
 
             if name_keyw == '':
                 name_keyw = '0'
         else:
             name_keyw = ''.join(
-                ch for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
+                ch
+                for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
                 if ch not in list(keyw))
 
             if name_keyw == '':
                 name_keyw = f"{keyw}{count}"
                 count += 1
-
 
         if 'sample' in file.lower():
             samp = ''.join([
@@ -143,7 +160,8 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
                 ch for ch in str([
                     file.split('_')[file.split('_').index(ii) - 1]
                     for ii in file.split('_') if 'DA' in ii
-                ])]).replace('p', '.')
+                ])
+            ]).replace('p', '.')
             DA = float(''.join([ii for ii in DA if ii.isdigit() or ii == '.']))
             DAadd = f'_DA{DA}'
         else:
@@ -170,3 +188,7 @@ def makeAbsDisp(targ='./', keyw='uM', numerical_keyw=True, field=8.57):
 
         disp_file.close()
         abs_file.close()
+
+
+if __name__ == "__main__":
+    make(targ='/Users/Brad/Downloads/VT_cw_BDPA', keyw='K')

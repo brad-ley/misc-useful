@@ -21,19 +21,22 @@ def compare(targ='./'):
     abs_add = 0
 
     for file in filelist:
-        legend = ' '.join([ch[:-5].split('/')[-1].lower() if 'light' in ch 
-            else ch.split('/')[-1] for ch in [
-            ii.title() for ii in file.split('_')
-            if ('absorption' in ii or 'dispersion' in ii or 'Light' in ii)
-        ]])
+        legend = ' '.join([
+            ch[:-5].split('/')[-1].lower()
+            if 'light' in ch else ch.split('/')[-1] for ch in [
+                ii.title() for ii in file.split('_')
+                if ('absorption' in ii or 'dispersion' in ii or 'Light' in ii)
+            ]
+        ])
         header, data = read(file)
         plt.figure('Comparison')
-        
+
         if (disp_add == 0 or abs_add == 0):
             if 'Dispersion' in legend:
                 disp_add = np.max(data[:, 1]) / 2
             elif 'Absorption':
                 abs_add = np.min(data[:, 1]) / 2
+
         if 'Dispersion' in legend:
             data[:, 1] += disp_add
         elif 'Absorption':
@@ -51,6 +54,11 @@ def compare(targ='./'):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2020/09/2020-09-05_E108Q_cwEPR'
-    makeAbsDisp(targ=targ,keyw='Light', numerical_keyw=False)
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2020/09/2020-09-08_E108Q_olig_cwEPR/high_mod'
+    makeAbsDisp(targ=targ,
+                keyw='Light',
+                file_suffix='rephased.dat',
+                numerical_keyw=False,
+                center_sect=15,
+                )
     compare(targ=targ)
