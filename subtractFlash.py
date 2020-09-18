@@ -8,6 +8,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import decimate, savgol_filter
 
 sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
+
 from readDataFile import read
 
 

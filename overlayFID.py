@@ -8,6 +8,10 @@ from readDataFile import read
 
 
 def importData(filename):
+    """importData.
+
+    :param filename: file
+    """
     file = open(filename, 'r').read()
 
     if file[0] == '{':

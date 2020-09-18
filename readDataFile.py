@@ -25,14 +25,17 @@ def read(filename, delimiter=','):
     file = open(filename, 'r').readlines()
     
     header = ''
+    found = False
     for line in file:
         if line.startswith('[Data]'):
             data_idx = file.index(line)
             skiprows = data_idx + 2
-            break
+            found = True
         elif all([isNumber(ii) for ii in line.split(delimiter)]):
             data_idx = file.index(line)
             skiprows = data_idx
+            found = True
+        if found:
             break
         header += line
 
