@@ -10,6 +10,10 @@ def lorentzian(x, x0, a, gam):
     return 1 / np.pi * a * 1 / 2 * gam / ((1 / 2 * gam)**2 + (x - x0)**2)
 
 
+def expfit(x, a, b):
+    return np.array(a*np.exp(-x/b))
+
+
 def make(targ='./', kind='disp'):
     """
     Plots the absorption or dispersion lineshapes from makeAbsDisp.py depending
@@ -42,14 +46,15 @@ def make(targ='./', kind='disp'):
 
     count = 0
     fig, axes = plt.subplots(len(files), sharex=True)
-
+    temps = []
+    gs = []
     for file in files:
         temperature = float("".join(
             [ii.strip('K') for ii in file.split('_') if 'K' in ii]))
         name = str(temperature) + ' K'
 
         data = np.loadtxt(targ + file, skiprows=1, delimiter=', ')
-        x = data[:, 0]
+        x = data[:, 0] + 8.57
         y = data[:, 1]
         y = y / np.max(np.abs(y))
 
@@ -86,10 +91,39 @@ def make(targ='./', kind='disp'):
             )
             fig.savefig(targ + 'fitted_absorptions.png')
 
-            max_idx = np.where(y == np.max(y))
-            min_idx = np.where(y == np.min(y))
+            max_idx = np.where(y == np.max(y))[0][0]
+            min_idx = np.where(y == np.min(y))[0][0]
 
             linewidth = float(x[min_idx] - x[max_idx])
+            
+            # zero crossing to find g-shift
+            crossing = np.where(np.diff(np.sign(y[max_idx:min_idx])) < 0)[0]
+            crossing = x[crossing[0]]
+
+            if file == files[0]:
+                g_center = crossing
+
+            g_shift = (crossing - g_center) / g_center * 100
+            
+            if not file == files[0]:
+                temps.append(temperature)
+                gs.append(g_shift)
+            if file == files[-1]:
+                temps = np.array(temps)
+                gs = np.array(gs)
+                popt, pcov = optimize.curve_fit(expfit,
+                                                temps,
+                                                gs,
+                                                maxfev=10000,
+                                                )
+
+                plt.figure('g-shift scatter')
+                plt.scatter(temps, gs, c='black')
+                plt.plot(np.linspace(temps[0], temps[-1], 1000), expfit(np.linspace(temps[0], temps[-1], 1000), *popt))
+                plt.annotate(f"T scale: {popt[1]:.2f} K", (max(temps) * 2 / 4, max(gs) * 3 / 4))
+                plt.ylabel('% shift')
+                plt.xlabel('Temperature (K)')
+                plt.title('$g$-shift vs. temperature in BDPA-Bz')
 
             plt.figure('Stacked ' + title.lower())
             plt.annotate(f"{linewidth*1e4:.1f} G", (x[min_idx] + 15e-4, shift * count))
@@ -100,8 +134,8 @@ def make(targ='./', kind='disp'):
         count -= 1
 
         if file == files[-3]:
-            x_min = data[0, 0] * (1 - 1e-4)
-            x_max = data[-1, 0] * (1 + 1e-4)
+            x_min = x[0] * (1 - 1e-4)
+            x_max = x[-1] * (1 + 1e-4)
     plt.xlim([x_min, x_max])
 
     plt.ylabel('Signal (shifted vertically for clarity)')
@@ -114,7 +148,10 @@ def make(targ='./', kind='disp'):
     plt.xlabel('Field (T)')
     # plt.legend().set_draggable(True)
     plt.title(f"cwEPR, {chi} of BDPA-Bz")
-    plt.savefig(targ + f"shifted_{start}fig.png")
+    plt.savefig(targ + f"shifted_{start}fig.png", dpi=200)
+
+    plt.figure('g-shift scatter')
+    plt.savefig(targ + "g vs temp.png", dpi=200)
     plt.show()
 
 

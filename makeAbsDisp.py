@@ -191,4 +191,4 @@ def make(targ='./',
 
 
 if __name__ == "__main__":
-    make(targ='/Users/Brad/Downloads/VT_cw_BDPA', keyw='K')
+    make(targ='/Users/Brad/Downloads/VT_cw_BDPA', keyw='K', center=False)
