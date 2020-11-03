@@ -11,7 +11,15 @@ def lorentzian(x, x0, a, gam):
 
 
 def expfit(x, a, b):
-    return np.array(a*np.exp(-x/b))
+    return np.array(a * np.exp(-x / b))
+
+
+def altfit(x, a, b):
+    return np.array(a * x**(-1 / 4) + b)
+
+
+def linfit(x, m, b):
+    return np.array(m * x + b)
 
 
 def make(targ='./', kind='disp'):
@@ -48,6 +56,11 @@ def make(targ='./', kind='disp'):
     fig, axes = plt.subplots(len(files), sharex=True)
     temps = []
     gs = []
+    widths = []
+    basetemps = []
+    basegs = []
+    basewidths = []
+
     for file in files:
         temperature = float("".join(
             [ii.strip('K') for ii in file.split('_') if 'K' in ii]))
@@ -95,38 +108,108 @@ def make(targ='./', kind='disp'):
             min_idx = np.where(y == np.min(y))[0][0]
 
             linewidth = float(x[min_idx] - x[max_idx])
-            
+
             # zero crossing to find g-shift
-            crossing = np.where(np.diff(np.sign(y[max_idx:min_idx])) < 0)[0]
-            crossing = x[crossing[0]]
+            crossing_idx = max_idx + \
+                np.where(np.diff(np.sign(y))[max_idx:min_idx] == -2)[0]
+            crossing = x[crossing_idx[0]]
 
             if file == files[0]:
                 g_center = crossing
 
             g_shift = (crossing - g_center) / g_center * 100
-            
-            if not file == files[0]:
+
+            # if not file == files[0]:
+            #     temps.append(temperature)
+            #     gs.append(g_shift)
+            basetemps.append(temperature)
+            basegs.append(g_shift)
+            basewidths.append(x[min_idx] - x[max_idx])
+
+            if temperature < 100:
                 temps.append(temperature)
                 gs.append(g_shift)
+                widths.append(x[min_idx] - x[max_idx])
+
             if file == files[-1]:
                 temps = np.array(temps)
                 gs = np.array(gs)
-                popt, pcov = optimize.curve_fit(expfit,
-                                                temps,
-                                                gs,
-                                                maxfev=10000,
-                                                )
+                widths = np.array(widths)
+                basetemps = np.array(basetemps)
+                basegs = np.array(basegs)
+                basewidths = np.array(basewidths)
+                popt, pcov = optimize.curve_fit(
+                    expfit,
+                    temps,
+                    widths,
+                    maxfev=10000,
+                )
+                poptalt, pcovalt = optimize.curve_fit(
+                    altfit,
+                    temps,
+                    widths,
+                    maxfev=10000,
+                )
+                poptg, pcovg = optimize.curve_fit(
+                    expfit,
+                    temps,
+                    gs,
+                    maxfev=10000,
+                )
 
                 plt.figure('g-shift scatter')
-                plt.scatter(temps, gs, c='black')
-                plt.plot(np.linspace(temps[0], temps[-1], 1000), expfit(np.linspace(temps[0], temps[-1], 1000), *popt))
-                plt.annotate(f"T scale: {popt[1]:.2f} K", (max(temps) * 2 / 4, max(gs) * 3 / 4))
+                plt.scatter(basetemps, basegs, c='black', label='Raw data')
+                plt.plot(np.linspace(temps[0], temps[-1], 1000),
+                         expfit(np.linspace(temps[0], temps[-1], 1000),
+                                *poptg),
+                         label=(r"$exp\left(\frac{-T}{\tau}\right)$; $\tau=$" +
+                                f"{poptg[1]:.2f}"))
+                plt.legend()
                 plt.ylabel('% shift')
                 plt.xlabel('Temperature (K)')
                 plt.title('$g$-shift vs. temperature in BDPA-Bz')
+                plt.figure('Linewidth')
+                plt.scatter(basetemps,
+                            1e4 * basewidths,
+                            c='black',
+                            label='Raw data')
+                plt.plot(np.linspace(temps[0], temps[-1], 1000),
+                         1e4 *
+                         expfit(np.linspace(temps[0], temps[-1], 1000), *popt),
+                         label=(r"$exp\left(\frac{-T}{\tau}\right)$; $\tau=$" +
+                                f"{popt[1]:.2f}"))
+                plt.plot(
+                    np.linspace(temps[0], temps[-1], 1000),
+                    1e4 *
+                    altfit(np.linspace(temps[0], temps[-1], 1000), *poptalt),
+                    label=r"$A T^{-1/4}$")
+                plt.legend()
+                plt.ylabel('Linewidth (G)')
+                plt.xlabel('Temperature (K)')
+                plt.title('Linewidth vs. temperature in BDPA-Bz')
+
+                poptlin, pcovlin = optimize.curve_fit(
+                    linfit,
+                    1e4 * basewidths,
+                    basegs,
+                    maxfev=10000,
+                )
+                plt.figure('g-shift vs linewidth')
+                plt.scatter(1e4 * basewidths, basegs, label='Raw data')
+                plt.plot(1e4 * np.linspace(basewidths[0], basewidths[-1], 1000),
+                         linfit(
+                             1e4 * np.linspace(basewidths[0], basewidths[-1], 1000),
+                             *poptlin),
+                         color='black',
+                         label=f'Fit: y={poptlin[0]:.2}x + {poptlin[1]:.2f}')
+                plt.ylabel('g-shift %')
+                plt.xlabel('Linewidth (G)')
+                plt.title('g-shift vs linewidth')
+                plt.legend()
 
             plt.figure('Stacked ' + title.lower())
-            plt.annotate(f"{linewidth*1e4:.1f} G", (x[min_idx] + 15e-4, shift * count))
+            plt.annotate(f"{linewidth*1e4:.1f} G",
+                         (x[min_idx] + 15e-4, shift * count))
             plt.annotate(f"{name}", (x[max_idx] - 35e-4, shift * count))
 
         plt.figure('Stacked ' + title.lower())
@@ -152,6 +235,11 @@ def make(targ='./', kind='disp'):
 
     plt.figure('g-shift scatter')
     plt.savefig(targ + "g vs temp.png", dpi=200)
+
+    plt.figure('Linewidth')
+    plt.savefig(targ + "linewidth vs T.png", dpi=200)
+    plt.figure('g-shift vs linewidth')
+    plt.savefig(targ + "gshift vs linewidth.png", dpi=200)
     plt.show()
 
 
