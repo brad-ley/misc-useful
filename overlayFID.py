@@ -1,5 +1,6 @@
 import os
 import sys
+import ast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +16,7 @@ def importData(filename):
     file = open(filename, 'r').read()
 
     if file[0] == '{':
-        data = eval(file)
+        data = ast.literal_eval(file)
     else:
         data = {}
         header, npdata = read(filename)

@@ -1,5 +1,6 @@
 import os
 import sys
+import ast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -64,7 +65,7 @@ def cycle(dir='./', rel_phase=0, maxQ=0.5):
         phase_list = sorted(phase_list)
 
         for file in group:
-            data = eval(open(dir + file, 'r').read())
+            data = ast.literal_eval(open(dir + file, 'r').read())
             print(file)
 
             if group.index(file) == 0:
