@@ -1,3 +1,4 @@
+""" Written by Brad Price """
 import os
 
 import numpy as np
