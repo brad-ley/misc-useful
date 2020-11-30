@@ -10,7 +10,8 @@ def make(targ='./',
          file_suffix='rephased.dat',
          field=8.57,
          center_sect=10,
-         center=True):
+         center=True,
+         hyster=0):
     """
     This finds the absorption and dispersion lines from the input 4-line
     rephased cwEPR spectra and makes new files for the absorption and
@@ -21,6 +22,8 @@ def make(targ='./',
     :param file_suffix: select the files that end in this string 
     :param field: B0 field value to add to field sweep
     :param center_sect: take the middle 1/nth when n is the argument
+    :param center: adjusts for hysteresis to align resonances
+    :param hyster: (mT) adjusts B-field by hyster value if filename includes 'hyster'
     """
 
     if not targ.endswith('/'):
@@ -112,7 +115,6 @@ def make(targ='./',
             print('flipped abs')
             phased_absorp = -1 * phased_absorp
 
-        print('---------------------------------------')
         curr_data[:, 2] = phased_disp[:]
         curr_data[:, 4] = phased_absorp[:]
 
@@ -124,6 +126,12 @@ def make(targ='./',
         else:
             diff_B = 0
         curr_data[:, 1] -= diff_B
+
+        if 'hyster' in file:
+            print(curr_data[:, 1])
+            curr_data[:, 1] -= hyster * 1e-3
+            print(curr_data[:, 1])
+        print('---------------------------------------')
 
         # print([ii for ii in file.split('_') if keyw in ii])
 
@@ -191,4 +199,4 @@ def make(targ='./',
 
 
 if __name__ == "__main__":
-    make(targ='/Users/Brad/Downloads/VT_cw_BDPA', keyw='K', center=False)
+    make(targ='/Users/Brad/odrive/Google Drive/Research/Data/2020/10/VT_cw_BDPA', keyw='K', center=False, hyster=3.9)

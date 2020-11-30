@@ -98,7 +98,7 @@ def make(targ='./', kind='disp'):
 
             if file == files[len(files) // 2]:
                 axes[files.index(file)].set_ylabel('Absorption (arb. u)')
-
+            
             fig.suptitle(
                 'Absorption (red: fit, black: experiment) vs\nfield for varying temperature T'
             )
@@ -195,15 +195,21 @@ def make(targ='./', kind='disp'):
                     maxfev=10000,
                 )
                 plt.figure('g-shift vs linewidth')
-                plt.scatter(1e4 * basewidths, basegs, label='Raw data')
+                plt.scatter(1e4 * basewidths, basegs,
+                            c=np.log(basetemps), cmap='plasma', label='Raw data')
                 plt.plot(1e4 * np.linspace(basewidths[0], basewidths[-1], 1000),
                          linfit(
-                             1e4 * np.linspace(basewidths[0], basewidths[-1], 1000),
+                             1e4 *
+                    np.linspace(basewidths[0], basewidths[-1], 1000),
                              *poptlin),
                          color='black',
                          label=f'Fit: y={poptlin[0]:.2}x + {poptlin[1]:.2f}')
+                cbar = plt.colorbar(ticks=np.log(basetemps))
+                cbar.ax.set_ylabel('Temperature (K)')
+                cbar.set_ticklabels(basetemps)
                 plt.ylabel('g-shift %')
                 plt.xlabel('Linewidth (G)')
+                # plt.zlabel('Temperature (K)')
                 plt.title('g-shift vs linewidth')
                 plt.legend()
 
@@ -244,4 +250,4 @@ def make(targ='./', kind='disp'):
 
 
 if __name__ == "__main__":
-    make(targ='/Users/Brad/Downloads/VT_cw_BDPA', kind='abs')
+    make(targ='/Users/Brad/odrive/Google Drive/Research/Data/2020/10/VT_cw_BDPA', kind='abs')
