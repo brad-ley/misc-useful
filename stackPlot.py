@@ -126,7 +126,7 @@ def make(targ='./', kind='disp'):
             basegs.append(g_shift)
             basewidths.append(x[min_idx] - x[max_idx])
 
-            if temperature < 100:
+            if temperature < 100 and temperature > 6:
                 temps.append(temperature)
                 gs.append(g_shift)
                 widths.append(x[min_idx] - x[max_idx])
@@ -169,20 +169,24 @@ def make(targ='./', kind='disp'):
                 plt.xlabel('Temperature (K)')
                 plt.title('$g$-shift vs. temperature in BDPA-Bz')
                 plt.figure('Linewidth')
-                plt.scatter(basetemps,
-                            1e4 * basewidths,
+                plt.scatter(basetemps[-9:],
+                        1e4 * basewidths[-9:],
                             c='black',
                             label='Raw data')
-                plt.plot(np.linspace(temps[0], temps[-1], 1000),
-                         1e4 *
-                         expfit(np.linspace(temps[0], temps[-1], 1000), *popt),
-                         label=(r"$exp\left(\frac{-T}{\tau}\right)$; $\tau=$" +
-                                f"{popt[1]:.2f}"))
-                plt.plot(
-                    np.linspace(temps[0], temps[-1], 1000),
-                    1e4 *
-                    altfit(np.linspace(temps[0], temps[-1], 1000), *poptalt),
-                    label=r"$A T^{-1/4}$")
+                # plt.scatter(basetemps,
+                #         1e4 * basewidths,
+                #             c='black',
+                #             label='Raw data')
+                # plt.plot(np.linspace(temps[0], temps[-1], 1000),
+                #          1e4 *
+                #          expfit(np.linspace(temps[0], temps[-1], 1000), *popt),
+                #          label=(r"$exp\left(\frac{-T}{\tau}\right)$; $\tau=$" +
+                #                 f"{popt[1]:.2f}"))
+                # plt.plot(
+                #     np.linspace(temps[0], temps[-1], 1000),
+                #     1e4 *
+                #     altfit(np.linspace(temps[0], temps[-1], 1000), *poptalt),
+                #     label=r"$A T^{-1/4}$")
                 plt.legend()
                 plt.ylabel('Linewidth (G)')
                 plt.xlabel('Temperature (K)')
