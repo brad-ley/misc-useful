@@ -1,5 +1,8 @@
 """ Written by Brad Price """
+import ast
 import os
+from pathlib import Path as P
+from pathlib import PurePath as PP
 
 import numpy as np
 from scipy import signal
@@ -30,16 +33,17 @@ def make(targ='./',
     if not targ.endswith('/'):
         targ += '/'
 
-    files = [targ + ii for ii in os.listdir(targ) if ii.endswith(file_suffix)]
+    files = [
+        targ + ii for ii in os.listdir(targ)
+        if ii.endswith(file_suffix) and not ii.startswith(".")
+    ]
 
     file_length = {}
 
     for file in files:
-        open_file = open(file, 'r')
-        lines = [ii.rstrip('\n') for ii in open_file.readlines()]
+        lines = [ii.rstrip('\n') for ii in P(file).read_text().split("\n")]
 
         file_length[file] = len(lines) + lines.index('[Data]') + 2
-        open_file.close()
 
     files_sort = [
         ii[0]
@@ -49,7 +53,7 @@ def make(targ='./',
     count = 0
 
     for file in files_sort:
-        lines = [ii.strip() for ii in open(file, 'r').readlines()]
+        lines = [ii.strip() for ii in P(file).read_text().strip().split("\n")]
 
         for line in lines:
             data_start = lines.index('[Data]') + 2
@@ -129,9 +133,7 @@ def make(targ='./',
         curr_data[:, 1] -= diff_B
 
         if 'hyster' in file:
-            print(curr_data[:, 1])
             curr_data[:, 1] -= hyster * 1e-3
-            print(curr_data[:, 1])
         print('---------------------------------------')
 
         # print([ii for ii in file.split('_') if keyw in ii])
@@ -140,7 +142,7 @@ def make(targ='./',
             name_keyw = ''.join(
                 ch
                 for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
-                if ch.isdigit() or ch == 'p').replace('p','.')
+                if ch.isdigit() or ch == 'p').replace('p', '.')
 
             if name_keyw == '':
                 name_keyw = '0'
@@ -181,23 +183,27 @@ def make(targ='./',
         abs_name = targ + 'absorption_' + \
             name_keyw + keyw + additional + DAadd + '_exp.txt'
 
-        disp_file = open(disp_name, 'w')
-        abs_file = open(abs_name, 'w')
-
-        disp_file.write(f"Field (T), {name_keyw + keyw} (deriv)\n")
-        abs_file.write(f"Field (T), {name_keyw + keyw} (deriv)\n")
+        P(disp_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
+        P(abs_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
         min_idx = int(
             np.where(curr_data[:, 4] == np.min(curr_data[:, 4]))[0][0])
         max_idx = int(
             np.where(curr_data[:, 4] == np.max(curr_data[:, 4]))[0][0])
-
+       
+        disp_str = ""
+        abs_str = ""
         for row in curr_data:
-            disp_file.write(f"{row[1]}, {row[2]}\n")
-            abs_file.write(f"{row[1]}, {row[4]}\n")
-
-        disp_file.close()
-        abs_file.close()
+            disp_str += f"{row[1]}, {row[2]}\n"
+            abs_str += f"{row[1]}, {row[4]}\n"
+        for row in curr_data:
+            P(disp_name).write_text(disp_str)
+            P(abs_name).write_text(abs_str)
 
 
 if __name__ == "__main__":
-    make(targ='/Users/Brad/odrive/Google Drive/Research/Data/2020/10/VT_cw_BDPA', keyw='K', center=False, hyster=3.9)
+    make(
+        targ=
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/10/VT_cw_BDPA',
+        keyw='K',
+        center=False,
+        hyster=3.9)

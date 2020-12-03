@@ -53,7 +53,9 @@ def make(targ='./', kind='disp'):
                    reverse=True)
 
     count = 0
-    fig, axes = plt.subplots(len(files), sharex=True)
+
+    if kind.startswith('abs'):
+        fig, axes = plt.subplots(len(files), sharex=True)
     temps = []
     gs = []
     widths = []
@@ -77,7 +79,7 @@ def make(targ='./', kind='disp'):
         # max_idx = max_idx[len(max_idx)//2]
         max_idx = max_idx[0]
 
-        if kind == 'abs':
+        if kind.startswith('abs'):
             p0 = [8.583, 1, 5e-4]
             popt, pcov = optimize.curve_fit(lorentzian,
                                             x,
@@ -98,7 +100,7 @@ def make(targ='./', kind='disp'):
 
             if file == files[len(files) // 2]:
                 axes[files.index(file)].set_ylabel('Absorption (arb. u)')
-            
+
             fig.suptitle(
                 'Absorption (red: fit, black: experiment) vs\nfield for varying temperature T'
             )
@@ -170,7 +172,7 @@ def make(targ='./', kind='disp'):
                 plt.title('$g$-shift vs. temperature in BDPA-Bz')
                 plt.figure('Linewidth')
                 plt.scatter(basetemps[-9:],
-                        1e4 * basewidths[-9:],
+                            1e4 * basewidths[-9:],
                             c='black',
                             label='Raw data')
                 # plt.scatter(basetemps,
@@ -200,7 +202,7 @@ def make(targ='./', kind='disp'):
                 )
                 plt.figure('g-shift vs linewidth')
                 plt.scatter(1e4 * basewidths, basegs,
-                            c=np.log(basetemps), cmap='plasma', label='Raw data')
+                            c=np.log10(basetemps), cmap='plasma', label='Raw data')
                 plt.plot(1e4 * np.linspace(basewidths[0], basewidths[-1], 1000),
                          linfit(
                              1e4 *
@@ -208,13 +210,21 @@ def make(targ='./', kind='disp'):
                              *poptlin),
                          color='black',
                          label=f'Fit: y={poptlin[0]:.2}x + {poptlin[1]:.2f}')
-                cbar = plt.colorbar(ticks=np.log(basetemps))
+                cbar = plt.colorbar(ticks=np.linspace(
+                    np.log10(np.min(basetemps)), np.log10(np.max(basetemps)), 10))
                 cbar.ax.set_ylabel('Temperature (K)')
-                cbar.set_ticklabels(basetemps)
+                cbar.set_ticklabels([f"{ii:.1f}" for ii in np.logspace(
+                    np.log10(np.min(basetemps)), np.log10(np.max(basetemps)), 10)])
                 plt.ylabel('g-shift %')
                 plt.xlabel('Linewidth (G)')
                 # plt.zlabel('Temperature (K)')
                 plt.title('g-shift vs linewidth')
+                plt.figure('g-shift scatter')
+                plt.savefig(targ + "g vs temp.png", dpi=200)
+                plt.figure('Linewidth')
+                plt.savefig(targ + "linewidth vs T.png", dpi=200)
+                plt.figure('g-shift vs linewidth')
+                plt.savefig(targ + "gshift vs linewidth.png", dpi=200)
                 plt.legend()
 
             plt.figure('Stacked ' + title.lower())
@@ -243,15 +253,8 @@ def make(targ='./', kind='disp'):
     plt.title(f"cwEPR, {chi} of BDPA-Bz")
     plt.savefig(targ + f"shifted_{start}fig.png", dpi=200)
 
-    plt.figure('g-shift scatter')
-    plt.savefig(targ + "g vs temp.png", dpi=200)
-
-    plt.figure('Linewidth')
-    plt.savefig(targ + "linewidth vs T.png", dpi=200)
-    plt.figure('g-shift vs linewidth')
-    plt.savefig(targ + "gshift vs linewidth.png", dpi=200)
     plt.show()
 
 
 if __name__ == "__main__":
-    make(targ='/Users/Brad/odrive/Google Drive/Research/Data/2020/10/VT_cw_BDPA', kind='abs')
+    make(targ='/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/10/VT_cw_BDPA', kind='abs')
