@@ -1,3 +1,8 @@
+import ast
+import os
+from pathlib import Path as P
+from pathlib import PurePath as PP
+
 import numpy as np
 
 
@@ -22,7 +27,7 @@ def read(filename, delimiter=','):
     :kwargs: delimiter
     :return: header, data
     """
-    file = open(filename, 'r').readlines()
+    file = P(filename).read_text().split("\n")
     
     header = ''
     found = False
@@ -39,16 +44,22 @@ def read(filename, delimiter=','):
             break
         header += line
 
+    idx_list = []
+    datatypes = []
     data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
     for line in header.split('\n')[::-1]:
         if line != '':
             datatypes = line
             break
 
-    idx_list = [('Field' in ii.strip()) for ii in datatypes.split(delimiter)]
+    if datatypes: 
+        idx_list = [('Field' in ii.strip()) for ii in datatypes.split(delimiter)]
+
     if 1 in idx_list:
         idx = idx_list.index(1)
-        if data[idx, 0] < data[idx, -1]:
-            data = np.flipud(data)
+    else:
+        idx = 0
+    if data[idx, 0] < data[idx, -1]:
+        data = np.flipud(data)
 
     return header, data

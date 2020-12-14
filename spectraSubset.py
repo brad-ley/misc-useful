@@ -3,7 +3,7 @@ import numpy as np
 
 def subset(x_in, y_in, elem=-1, start=-1, end=-1):
     """
-    Meant to allow a user to select and interpolate a subset of a dataset
+    Allows a user to select and interpolate a subset of a dataset
     elem: integer
     start, end: field in mT
     """

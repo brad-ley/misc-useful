@@ -147,11 +147,8 @@ def make(targ='./',
             if name_keyw == '':
                 name_keyw = '0'
         else:
-            name_keyw = ''.join(
-                ch
-                for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
-                if ch not in list(keyw))
-
+            name_keyw = "".join([ii for ii in file.split('_') if keyw in ii]).replace(keyw, "")
+                
             if name_keyw == '':
                 name_keyw = f"{keyw}{count}"
                 count += 1
