@@ -12,8 +12,8 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/12/13/conc'
-    # makeAbs = False
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/12/18'
+    makeAbs = False
 
     if makeAbs:
         make(
@@ -35,8 +35,8 @@ def compare(targ='./'):
         if ii.startswith('dispersion') or ii.startswith('absorption')
     ]
 
-    disp_add = 0
-    abs_add = 0
+    disp_add = False
+    abs_add = False
 
     for file in filelist:
         legend = ' '.join([
@@ -48,11 +48,17 @@ def compare(targ='./'):
 
         # data[:, 1] = subtract(data[:, 1])
 
-        if (disp_add == 0 or abs_add == 0):
+        if not disp_add:
             if 'Disp' in legend:
-                data[:, 1] += np.max(data[:, 1])
-            elif 'Abs' in legend:
-                data[:, 1] += np.min(data[:, 1])
+                disp_add = np.max(data[:, 1])
+        if not abs_add:
+            if 'Abs' in legend:
+                abs_add = np.min(data[:, 1])
+
+        if 'Disp' in legend:
+            data[:, 1] += disp_add
+        elif 'Abs' in legend:
+            data[:, 1] += abs_add
 
         plt.plot(data[:, 0], data[:, 1], label=legend)
 
@@ -62,7 +68,7 @@ def compare(targ='./'):
     plt.ylabel('Signal (arb. u)')
     plt.yticks([])
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-    plt.savefig(targ + 'compared.png')
+    plt.savefig(targ + 'compared.png', dpi=200)
     plt.show()
 
 

@@ -6,18 +6,23 @@ from pathlib import PurePath as PP
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import savgol_filter
+from scipy.optimize import curve_fit
 
 from readDataFile import read
 
 
 def main():
     process(
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/12/13/M06_Tsweep.dat',
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/12/18/M03_controlTsweep.dat',
         5,
         25,
         window_frac=10,
         order=2
     )
+
+
+def biexponential(x, A, a1, t1, a2, t2):
+    return A + a1 * np.exp(- x / t1) + a2 * np.exp(-x / t2)
 
 
 def process(filename, on, off, window_frac=10, order=2):
@@ -83,7 +88,11 @@ def process(filename, on, off, window_frac=10, order=2):
             plt.plot(t[:len(row)], row / np.max(row), alpha=0.3, color='lightgray')
             full += row[:smallen] / np.max(row[:smallen])
         full = full / np.max(full)
-        plt.plot(t[:smallen], full)
+        popt, pcov = curve_fit(biexponential, t[:smallen], full, maxfev=100000)
+        abovelas = np.where(t > on)[0][0]
+        plt.plot(t[:smallen], full, label="Raw data")
+        plt.plot(np.linspace(t[abovelas], t[smallen]), biexponential(np.linspace(t[abovelas], t[smallen]), *popt), label=r"Fit: $\tau_1$="+f"{popt[2]:.2f}"+r" $s^{-1}$;$\tau_2$="+f"{popt[4]:.2f}"+r" $s^{-1}$")
+        plt.legend()
         rang = np.max(full) - np.min(full)
         plt.annotate('Laser\npulse', (on/2, np.max(full)), color='gray', horizontalalignment='center')
         plt.ylim(np.min(full) - rang/4, np.max(full) + rang/4)
