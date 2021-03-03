@@ -17,6 +17,7 @@ def demodulate(time, signal):
 
     :param time: x-axis for data
     :param signal: complex-value data array
+    :return: demodulated signal
     """
     fft = np.fft.fft(signal)
     freq = np.fft.fftfreq(len(signal), time[1])
@@ -31,6 +32,13 @@ if __name__ == "__main__":
     )
     maxidx = np.argmax(np.amax(data, axis=0)[2:]) + 2
     out = demodulate(data[:, 0], data[:, 2] + 1j * data[:, 3])
-    plt.plot(data[:, 0], np.abs(out))
+    # out = demodulate(data[:,0],np.exp(1j * 11 * data[:,0]))
+    fig, ax = plt.subplots()
+    # plt.plot(data[:, 0], np.imag(out), data[:, 0], np.imag(out))
+    ax.plot(data[:, 1] * 1e3, np.abs(out))
+    ax.set_yticks([])
+    ax.set_xlabel('Field (mT)')
+    # ax.set_ylabel('Signal (arb. u)')
+    for spine in ['right', 'left', 'top']:
+        ax.spines[spine].set_visible(False)
     plt.show()
-    # demodulate(data[:,0],np.exp(1j * 11 * data[:,0]))
