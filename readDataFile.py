@@ -34,6 +34,8 @@ def read(filename, delimiter=','):
     for line in file:
         if line.startswith('[Data]'):
             data_idx = file.index(line)
+            header += line + "\n"
+            header += file[file.index(line) + 1] + "\n"
             skiprows = data_idx + 2
             found = True
         elif all([isNumber(ii) for ii in line.split(delimiter)]):
@@ -42,7 +44,7 @@ def read(filename, delimiter=','):
             found = True
         if found:
             break
-        header += line
+        header += line + "\n"
 
     idx_list = []
     datatypes = []
