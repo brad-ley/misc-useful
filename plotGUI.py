@@ -1152,6 +1152,8 @@ class MainWindow(QMainWindow):
         self.font = 14
         self.x_mode = self.y_mode = False
         self.bw = False
+        self.plot_delimiter = ','
+        self.begin_line = 0
 
         self.xticks_entered = self.yticks_entered = self.xlabel_entered = \
             self.ylabel_entered = self.title_entered = self.user_labels = \
@@ -1288,7 +1290,7 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-        # self.showMaximized()
+            # self.showMaximized()
 
     def setBW(self):
         self.bw = self.params.param('Plot options', 'B & W').value()
