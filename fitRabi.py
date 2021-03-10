@@ -2,50 +2,42 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit as cf
 
+from readDataFile import read
 
-def func(xdata, a, b, c, d):
-    return a + d * np.exp(-b * xdata) * np.cos(c * xdata)
+
+def func(xdata, freq, a, b, d, phi):
+    return a + d * np.exp(-b * xdata) * np.cos(2 * np.pi * freq * xdata + phi)
 
 
 def process(filename):
-    file = open(filename, 'r')
-    lines = file.readlines()
-    data_idx = lines.index('[Data]\n')
-    data = []
-
-    for ii in range(data_idx + 2, len(lines) - 1):
-        data.append([
-            float(lines[ii].rstrip('\n').split(',')[0]),
-            float(lines[ii].rstrip('\n').split(',')[1]),
-            float(lines[ii].rstrip('\n').split(',')[2])
-        ])
+    header, data = read(filename)
 
     data_array = np.array(data)
     data_dict = {
         'param': 1E6 * data_array[:, 0],
-        'real': data_array[:, 1],
-        'imag': data_array[:, 2]
+        'echo': data_array[:, 3],
     }
 
-    popt, pcov = cf(
-        func, data_dict['param'],
-        np.sqrt(data_dict['real']**2 + data_dict['imag']**2) /
-        np.max(np.sqrt(data_dict['real']**2 + data_dict['imag']**2)))
-    min_idx = np.where(
-        func(data_dict['param'], *popt) == np.min(
-            func(data_dict['param'], *popt)))
-    min_time = data_dict['param'][min_idx][0]
-    rabi_freq = 1 / (2 * min_time * 10**(-6)) / 10**(6)
-    print(popt)
-    plt.plot(
+    popt, pcov = cf(func, data_dict['param'], data_dict['echo'])
+    min_idx = np.argmin(func(data_dict['param'], *popt))
+    min_time = data_dict['param'][min_idx]
+    rabi_freq = 1 / (2 * min_time * 1E-6) / 1E6 # convert the us to s then get freq
+    # print(popt)
+    fig, ax = plt.subplots()
+    ax.plot(data_dict['param'], data_dict['echo'], label='Raw data', c='black')
+    ax.plot(
         data_dict['param'],
-        np.sqrt(data_dict['real']**2 + data_dict['imag']**2) /
-        np.max(np.sqrt(data_dict['real']**2 + data_dict['imag']**2)))
-    plt.plot(data_dict['param'], func(data_dict['param'], *popt))
-    plt.text(2*min_time, (popt[0] + 1)/2, f"Min time: {min_time} $\mu$s\nFreq: {rabi_freq:.2f} MHz")
-    plt.ylabel('Echo intensity (arb. u)')
-    plt.xlabel('Time ($\mu$s)')
+        func(data_dict['param'], *popt),
+        label=f"Min time: {min_time:.2f} $\mu$s\nFreq: {popt[0]:.2f} MHz", c='red')
+    ax.legend()
+    ax.set_ylabel('Echo intensity (arb. u)')
+    ax.set_yticks([])
+    ax.set_xlabel('$P_1$ length ($\mu$s)')
+    ax.set_title('Rabi echo intensity vs. inversion pulse length')
+    for s in ['top', 'right']:
+        ax.spines[s].set_visible(False)
     plt.show()
 
 
-process('M08_rabi_000.dat')
+if __name__ == "__main__":
+    process('/Users/Brad/Downloads/M22_Rabi_001.dat')
