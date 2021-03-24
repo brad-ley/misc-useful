@@ -1,9 +1,9 @@
 def statusBar(percent):
-    ps = '|' + '='*(percent//2) + '-'*(50 - (percent//2)) + '|'
-    if percent == 100:
-        print(f"{ps} {percent}% complete")
+    ps = '|' + '='*(int(percent)//2) + '-'*(50 - (int(percent)//2)) + '|'
+    if int(percent) == 100:
+        print(f"{ps} {percent:.1f}% complete")
     else:
-        print(f"{ps} {percent}% complete", end='\r')
+        print(f"{ps} {percent:.1f}% complete", end='\r')
 
 if __name__=="__main__":
     import time
