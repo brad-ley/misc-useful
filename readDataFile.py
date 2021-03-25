@@ -1,7 +1,4 @@
-import ast
-import os
 from pathlib import Path as P
-from pathlib import PurePath as PP
 
 import numpy as np
 
@@ -28,9 +25,10 @@ def read(filename, delimiter=','):
     :return: header, data
     """
     file = P(filename).read_text().split("\n")
-    
+
     header = ''
     found = False
+
     for line in file:
         if line.startswith('[Data]'):
             data_idx = file.index(line)
@@ -42,6 +40,7 @@ def read(filename, delimiter=','):
             data_idx = file.index(line)
             skiprows = data_idx
             found = True
+
         if found:
             break
         header += line + "\n"
@@ -49,18 +48,25 @@ def read(filename, delimiter=','):
     idx_list = []
     datatypes = []
     data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
+
     for line in header.split('\n')[::-1]:
         if line != '':
             datatypes = line
             break
 
-    if datatypes: 
-        idx_list = [('Field' in ii.strip()) for ii in datatypes.split(delimiter)]
+    if datatypes:
+        idx_dict = {'field': ['field' in ii.strip().lower()
+                              for ii in datatypes.split(delimiter)],
+                              'time': ['time' in ii.strip().lower()
+                                  for ii in datatypes.split(delimiter)]}
 
-    if 1 in idx_list:
-        idx = idx_list.index(1)
+    if True in idx_dict['field']:
+        idx = idx_dict['field'].index(1)
+    elif True in idx_dict['time']:
+        idx = idx_dict['time'].index(1)
     else:
         idx = 0
+
     if data[idx, 0] < data[idx, -1]:
         data = np.flipud(data)
 

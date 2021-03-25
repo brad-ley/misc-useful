@@ -1,24 +1,40 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import re
 from pathlib import Path as P
+
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.signal import savgol_filter
 
 
 def main():
-########### CHANGE FOLDER HERE #############
-    process(folder=r"G:\My Drive\Research\Data\2021\03\24")
+    ########### CHANGE FOLDER HERE #############
+    process(
+        folder=r"/Users/Brad/Desktop/210324_PMTon"
+    )
 ############################################
 
+
 def statusBar(percent):
-    ps = '|' + '=' * (int(percent) // 2) + '-' * (50 - (int(percent) // 2)) + '|'
+    ps = '|' + '=' * (int(percent) // 2) + '-' * \
+        (50 - (int(percent) // 2)) + '|'
+
     if int(percent) == 100:
         print(f"{ps} {percent:.1f}% complete")
     else:
         print(f"{ps} {percent:.1f}% complete", end='\r')
 
 
-def process(folder=".", keyword="wvlth", savgol=True, windowing=20, show=False):
+def process(folder=".",
+            keyword="wvlth",
+            windowing=20,
+            show=False):
+    """process.
+
+    :param folder: target folder of UV Vis data
+    :param keyword: sweep keyword
+    :param windowing: number of points in Savitzky-Golay window
+    :param show: show matplotlib plot
+    """
     filelist = list(P(folder).glob("*" + keyword + "*.dat"))
 
     p = re.compile("(wvlth)([0-9]{3})")
@@ -29,26 +45,27 @@ def process(folder=".", keyword="wvlth", savgol=True, windowing=20, show=False):
     for idx, exp in enumerate(sorted(experiments)):
         avglist = list(P(folder).glob("*" + "".join(exp) + "*.dat"))
         avgdata = False
+
         for idxx, file in enumerate(avglist):
-            strlist = P(file).read_text().split("\n")
-            lineidx = 0
-            for index, line in enumerate(strlist):
-                if line == "Time (s), Signal (V) ":
-                    lineidx = index + 1
-                    break
-            data = np.loadtxt(str(file), skiprows=lineidx, delimiter=",")
+            header, data = read(file)
+            data = data[data[:, 0] > 0]
+
             if type(avgdata) == bool:
-                avgdata = data[2:, :]
+                avgdata = data
                 avgdata[:, -1] -= np.average(avgdata[-30:, -1])
             else:
-                avgdata[:, -1] += data[2:, -1] - np.average(data[-30:, -1])
-            statusBar((idx * len(avglist) + idxx + 1) / len(experiments) / len(avglist) * 100)
+                avgdata[:, -1] += data[:, -1] - np.average(data[-30:, -1])
+            statusBar((idx * len(avglist) + idxx + 1) / len(experiments) /
+                      len(avglist) * 100)
         avgdata[:, -1] /= len(avglist)
         filteravg = np.copy(avgdata)
-        if savgol:
-            filteravg[:, -1] = savgol_filter(avgdata[:, -1], 2 * (len(avgdata[:, -1]) // windowing) + 1, 2)
-        ax.plot(avgdata[:, 0], avgdata[:, -1], label="".join(exp))
-        filterax.plot(filteravg[:, 0], filteravg[:, -1], label="".join(exp))
+
+        filteravg[:, -1] = savgol_filter(
+                avgdata[:, -1], 2 * (len(avgdata[:, -1]) // windowing) + 1, 2)
+        pw = re.compile("(Wavelength: )([0-9]{3}\.[0-9]{3})")
+        wv = pw.findall(header)[0]
+        ax.plot(avgdata[:, 0], avgdata[:, -1], label=f"{float(wv[-1]):.1f} nm")
+        filterax.plot(filteravg[:, 0], filteravg[:, -1], label=f"{float(wv[-1]):.1f} nm")
 
     for AX in [ax, filterax]:
         AX.spines['top'].set_visible(False)
@@ -56,15 +73,91 @@ def process(folder=".", keyword="wvlth", savgol=True, windowing=20, show=False):
         AX.set_xlabel("Time (s)")
         AX.set_ylabel("Signal (V)")
         AX.set_xscale("log")
-        AX.legend()
+        AX.legend(loc='right')
+
         if AX == ax:
             AX.set_title("Flash photolysis signal vs. log time")
-            fig.savefig(P.joinpath(P(folder), "averagedUVVisData.png"), dpi=300)
+            fig.savefig(P.joinpath(P(folder), "averagedUVVisData.png"),
+                        dpi=300)
         elif AX == filterax:
             AX.set_title("Filtered flash photolysis signal vs. log time")
-            filterfig.savefig(P.joinpath(P(folder), "FILTEREDaveragedUVVisData.png"), dpi=300)
+            filterfig.savefig(P.joinpath(P(folder),
+                                         "FILTEREDaveragedUVVisData.png"),
+                              dpi=300)
+
     if show:
         plt.show()
+
+
+def isNumber(num):
+    """
+    :param s:
+    :return:
+    stackexchange function to check if user input is a feasible number
+    """
+    try:
+        float(num)
+
+        return True
+    except ValueError:
+        return False
+
+
+def read(filename, delimiter=','):
+    """
+    Takes file from EPR computer, removes header, returns header, numpy array
+    :args: filename
+    :kwargs: delimiter
+    :return: header, data
+    """
+    file = P(filename).read_text().split("\n")
+
+    header = ''
+    found = False
+
+    for line in file:
+        if line.startswith('[Data]'):
+            data_idx = file.index(line)
+            header += line + "\n"
+            header += file[file.index(line) + 1] + "\n"
+            skiprows = data_idx + 2
+            found = True
+        elif all([isNumber(ii) for ii in line.split(delimiter)]):
+            data_idx = file.index(line)
+            skiprows = data_idx
+            found = True
+
+        if found:
+            break
+        header += line + "\n"
+
+    idx_list = []
+    datatypes = []
+    data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
+
+    for line in header.split('\n')[::-1]:
+        if line != '':
+            datatypes = line
+
+            break
+
+    if datatypes:
+        idx_dict = {'field': ['field' in ii.strip().lower()
+                              for ii in datatypes.split(delimiter)],
+                              'time': ['time' in ii.strip().lower()
+                                  for ii in datatypes.split(delimiter)]}
+
+    if True in idx_dict['field']:
+        idx = idx_dict['field'].index(1)
+    elif True in idx_dict['time']:
+        idx = idx_dict['time'].index(1)
+    else:
+        idx = 0
+
+    if data[idx, 0] > data[idx, -1]:
+        data = np.flipud(data)
+
+    return header, data
 
 
 if __name__ == "__main__":
