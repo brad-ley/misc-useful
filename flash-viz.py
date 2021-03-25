@@ -13,7 +13,7 @@ def main():
     process(
         folder=r"/Users/Brad/Desktop"
     )
-############################################
+    ############################################
 
 
 def statusBar(percent):
