@@ -11,7 +11,7 @@ from scipy.signal import savgol_filter
 def main():
     ########### CHANGE FOLDER HERE #############
     process(
-        folder=r"/Users/Brad/Desktop/210324_PMTon"
+        folder=r"/Users/Brad/Desktop"
     )
 ############################################
 
@@ -38,6 +38,8 @@ def process(folder=".",
     :param show: show matplotlib plot
     """
     filelist = list(P(folder).glob("*" + keyword + "*.dat"))
+    if not len(filelist):
+        raise ValueError("The folder or keyword is wrong -- no files were found with the parameters given.")
 
     p = re.compile("(wvlth)([0-9]{3})")
     experiments = list(set([p.findall(str(ii))[0] for ii in filelist]))
