@@ -53,19 +53,18 @@ def read(filename, delimiter=','):
         if line != '':
             datatypes = line
             break
-
+    
+    idx = 0
     if datatypes:
         idx_dict = {'field': ['field' in ii.strip().lower()
                               for ii in datatypes.split(delimiter)],
                               'time': ['time' in ii.strip().lower()
                                   for ii in datatypes.split(delimiter)]}
 
-    if True in idx_dict['field']:
-        idx = idx_dict['field'].index(1)
-    elif True in idx_dict['time']:
-        idx = idx_dict['time'].index(1)
-    else:
-        idx = 0
+        if True in idx_dict['field']:
+            idx = idx_dict['field'].index(1)
+        elif True in idx_dict['time']:
+            idx = idx_dict['time'].index(1)
 
     if data[idx, 0] < data[idx, -1]:
         data = np.flipud(data)
