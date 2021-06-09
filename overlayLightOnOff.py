@@ -12,7 +12,7 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/12/18'
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2'
     makeAbs = False
 
     if makeAbs:

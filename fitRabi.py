@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit as cf
 
+from scipy.optimize import curve_fit as cf
+from pathlib import Path as P
 from readDataFile import read
 
 
@@ -36,8 +37,9 @@ def process(filename):
     ax.set_title('Rabi echo intensity vs. inversion pulse length')
     for s in ['top', 'right']:
         ax.spines[s].set_visible(False)
+    plt.savefig(P(filename).parent.joinpath('fixedSourceRabi.png'), dpi=300)
     plt.show()
 
 
 if __name__ == "__main__":
-    process('/Users/Brad/Downloads/M22_Rabi_001.dat')
+    process('/Users/Brad/Downloads/M15_rabi_000.dat')

@@ -34,12 +34,13 @@ def make(targ='./',
         targ += '/'
 
     files = [
-        targ + ii for ii in os.listdir(targ)
-        if ii.endswith(file_suffix) and not ii.startswith(".")
+        str(ii) for ii in P(targ).iterdir()
+        if ii.name.endswith(file_suffix) and not ii.name.startswith(".")
     ]
 
     file_length = {}
-
+    
+    print([P(ii).stem for ii in files])
     for file in files:
         lines = [ii.rstrip('\n') for ii in P(file).read_text().split("\n")]
 
@@ -162,12 +163,13 @@ def make(targ='./',
             additional = f'_sample{samp}'
         else:
             additional = ''
-
-        if 'DA' in file:
+        
+        fname = P(file).stem
+        if 'DA' in fname:
             DA = ''.join([
                 ch for ch in str([
-                    file.split('_')[file.split('_').index(ii) - 1]
-                    for ii in file.split('_') if 'DA' in ii
+                    fname.split('_')[fname.split('_').index(ii)]
+                    for ii in fname.split('_') if 'DA' in ii
                 ])
             ]).replace('p', '.')
             DA = float(''.join([ii for ii in DA if ii.isdigit() or ii == '.']))
@@ -200,7 +202,8 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2020/10/VT_cw_BDPA',
-        keyw='K',
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2/',
+        keyw='Light',
+        numerical_keyw=False,
         center=False,
         hyster=3.9)

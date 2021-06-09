@@ -1,12 +1,15 @@
 import os
+import sys
+import ast
+from pathlib import Path as P
+from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate, optimize, signal
-import sys
 
-sys.path.append('/Users/Brad/Documents/Research/code/python/misc-useful')
-from makeAbsDisp import makeAbsDisp
+from makeAbsDisp import make
+
 
 def calibrate(targ='./', keyw="uM"):
     """
@@ -19,14 +22,19 @@ def calibrate(targ='./', keyw="uM"):
     unknown = []
     samples = []
 
+    if not targ.endswith('/'):
+        targ += '/'
+
     filelist = sorted(
         [
             targ + ii for ii in os.listdir(targ)
+
             if ii.startswith('dispersion') and ii.endswith('.txt')
         ],
         key=lambda f: float(''.join(ch for ch in str(
             [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
-                                    if ch.isdigit())),
+
+            if ch.isdigit())),
         reverse=True)
 
     base_DA = -1
@@ -34,32 +42,39 @@ def calibrate(targ='./', keyw="uM"):
     for file in filelist:
         # because the dispersive lineshape is nicer, use that and Hilbert
         # transform it
+        DA = False
 
         name = ''.join(
             ch for ch in str([ii for ii in file.split('_') if keyw in ii])
+
             if ch.isdigit())
 
-        DA = float(''.join(
-            ch for ch in str([ii for ii in file.split('_') if 'DA' in ii])
-            if ch.isdigit() or ch == '.'))
+        try:
+            DA = float(''.join(
+                ch for ch in str([ii for ii in file.split('_') if 'DA' in ii])
+
+                if ch.isdigit() or ch == '.'))
+            if base_DA == -1:
+                base_DA = DA
+
+        except ValueError:
+            pass
 
         samp = ''.join(
             ch for ch in str([ii for ii in file.split('_') if 'sample' in ii])
+
             if ch.isdigit())
 
         if samp:
             samp = float(samp)
 
-        if base_DA == -1 and DA:
-            base_DA = DA
-
         if DA:
             scaling = 10**(float(DA) / 10) / 10**(base_DA / 10)
-            leg_name = name + keyw
+            leg_name = name + keyw + " " + DA + "DA"
         else:
             scaling = 1
-            leg_name = name + keyw + " " + DA + "DA"
-            
+            leg_name = name + keyw
+
         if samp:
             leg_name = f"Samp {int(samp)}"
 
@@ -129,11 +144,12 @@ def func(x, m):
 
 
 if __name__ == "__main__":
-    makeAbsDisp(
-        targ=
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/',
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/08/Conc sweep'
+    print([ii.stem for ii in P(targ).iterdir()])
+    make(
+        targ=targ,
+        keyw='uM'
     )
     calibrate(
-        targ=
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2020-08-26_Gd-DOTA_cwEPR/'
+        targ=targ
     )
