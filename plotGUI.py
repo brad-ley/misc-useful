@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QGridLayout,
 from pyqtgraph import (GraphicsLayoutWidget, LinearRegionItem, mkPen,
                        setConfigOptions)
 from pyqtgraph.parametertree import Parameter, ParameterTree
+
 """
 TODO
 [X] Add comments
@@ -50,6 +51,7 @@ class PlotGUI(QWidget):
     """
     Main window of plotting app
     """
+
     def __init__(self):
         """
         Define initialization values of user inputs
@@ -388,6 +390,7 @@ class PlotGUI(QWidget):
             if all([
                     value < np.max(self.data[:, self.x_index])
                     and value > np.min(self.data[:, self.x_index])
+
                     for value in self.region
             ]):
                 self.lr = LinearRegionItem(
@@ -397,14 +400,14 @@ class PlotGUI(QWidget):
                     reg = self.data[:, self.x_index][np.where(
                         np.min(self.data[:, self.x_index]) ==
                         self.data[:, self.x_index])[0][0] +
-                                                     np.shape(self.data)[0] //
-                                                     200]
+                        np.shape(self.data)[0] //
+                        200]
                 except IndexError:
                     reg = self.data[:, self.x_index][np.where(
                         np.min(self.data[:, self.x_index]) ==
                         self.data[:, self.x_index])[0][0] -
-                                                     np.shape(self.data)[0] //
-                                                     200]
+                        np.shape(self.data)[0] //
+                        200]
                 self.lr = LinearRegionItem(
                     values=[np.min(self.data[:, self.x_index]), reg])
             self.pl[-1].addItem(self.lr)
@@ -1130,6 +1133,7 @@ class MplCanvas(FigureCanvasQTAgg):
     This allows a user to import a csv file from plot_gui app export and the user 
     can live-update their matplotlib plot in window for final export to png
     """
+
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
@@ -1290,7 +1294,7 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-            # self.showMaximized()
+        # self.showMaximized()
 
     def setBW(self):
         self.bw = self.params.param('Plot options', 'B & W').value()
@@ -1393,8 +1397,7 @@ class MainWindow(QMainWindow):
 
     def chooseFile(self):
         """
-        Opens dialog and returns filename for plotting. If filename isn't found, returns file for a file on bprice
-        computer... not super helpful for distribution and wi
+        Opens dialog and returns filename for plotting.
         :return:
         """
         self.file = QFileDialog.getOpenFileName(

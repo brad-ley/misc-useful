@@ -1,6 +1,6 @@
+import ast
 import os
 import sys
-import ast
 from pathlib import Path as P
 from pathlib import PurePath as PP
 
@@ -11,7 +11,7 @@ from scipy import integrate, optimize, signal
 from makeAbsDisp import make
 
 
-def calibrate(targ='./', keyw="uM"):
+def calibrate(targ='./', keyw="uM", numerical_keyw=True):
     """
     This makes a calibration curve of baseline-subtracted doubly-integrated
     absorption lineshape as a function of concentration
@@ -25,17 +25,21 @@ def calibrate(targ='./', keyw="uM"):
     if not targ.endswith('/'):
         targ += '/'
 
-    filelist = sorted(
-        [
-            targ + ii for ii in os.listdir(targ)
+    if numerical_keyw:
+        filelist = sorted(
+            [
+                targ + ii for ii in os.listdir(targ)
 
-            if ii.startswith('dispersion') and ii.endswith('.txt')
-        ],
-        key=lambda f: float(''.join(ch for ch in str(
-            [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
+                if ii.startswith('dispersion') and ii.endswith('.txt')
+            ],
+            key=lambda f: float(''.join(ch for ch in str(
+                [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
 
-            if ch.isdigit())),
-        reverse=True)
+                if ch.isdigit())),
+            reverse=True)
+    else:
+        filelist = [targ + ii for ii in os.listdir(targ)
+                    if ii.startswith('dispersion') and ii.endswith('.txt')]
 
     base_DA = -1
 
@@ -44,16 +48,21 @@ def calibrate(targ='./', keyw="uM"):
         # transform it
         DA = False
 
-        name = ''.join(
-            ch for ch in str([ii for ii in file.split('_') if keyw in ii])
+        if numerical_keyw:
+            name = ''.join(
+                ch for ch in str([ii for ii in file.split('_') if keyw in ii])
 
-            if ch.isdigit())
+                if ch.isdigit())
+        else:
+            name = "".join([ii.strip(keyw)
+                            for ii in file.split('_') if keyw in ii])
 
         try:
             DA = float(''.join(
                 ch for ch in str([ii for ii in file.split('_') if 'DA' in ii])
 
                 if ch.isdigit() or ch == '.'))
+
             if base_DA == -1:
                 base_DA = DA
 
@@ -66,7 +75,10 @@ def calibrate(targ='./', keyw="uM"):
             if ch.isdigit())
 
         if samp:
-            samp = float(samp)
+            try:
+                leg_name = f"Samp {int(samp)}"
+            except ValueError:
+                pass
 
         if DA:
             scaling = 10**(float(DA) / 10) / 10**(base_DA / 10)
@@ -75,16 +87,14 @@ def calibrate(targ='./', keyw="uM"):
             scaling = 1
             leg_name = name + keyw
 
-        if samp:
-            leg_name = f"Samp {int(samp)}"
-
         print(f'DA is {DA}, base DA is {base_DA}, scaling is {scaling}')
 
         dat = np.loadtxt(file, skiprows=1, delimiter=',')
         dispersive = dat[:, 1] * scaling
         absorptive = -1 * np.imag(signal.hilbert(dispersive))
         absorption = integrate.cumtrapz(absorptive)
-        absorp_err = np.sqrt(len(absorption)) * np.std(absorption)
+        absorp_err = np.sqrt(len(absorption)) * \
+            np.std(absorption[-len(absorption) // 10:])
         integrate_abs = integrate.trapz(absorption)
 
         plt.figure('Absorption')
@@ -95,9 +105,12 @@ def calibrate(targ='./', keyw="uM"):
         plt.legend()
 
         if 'sample' not in file:
-            x.append(float(name))
-            y.append(integrate_abs)
-            e.append(absorp_err)
+            try:
+                x.append(float(name))
+                y.append(integrate_abs)
+                e.append(absorp_err)
+            except ValueError:
+                pass
         else:
             unknown.append(integrate_abs)
             samples.append(samp)
@@ -106,36 +119,39 @@ def calibrate(targ='./', keyw="uM"):
     plt.yticks([0])
     plt.ylabel('Integrated absorption (arb. u)')
     plt.xlabel('Field (T)')
-    plt.savefig(targ + 'absorption.png')
+    plt.savefig(targ + 'absorption.png', dpi=300)
 
     plt.figure('Dispersion')
     plt.yticks([0])
     plt.ylabel('Integrated dispersion (arb. u)')
     plt.xlabel('Field (T)')
-    plt.savefig(targ + 'dispersion.png')
+    plt.savefig(targ + 'dispersion.png', dpi=300)
 
-    plt.figure('Calibration')
-    popt, pcov = optimize.curve_fit(func, x, y)
-    conc = unknown / popt[0]
-    end = np.max(np.hstack((x, conc)))
-    plt.plot(np.linspace(0, end, 1000), func(np.linspace(0, end, 1000), *popt),
-             'k--')
-    plt.text(10, 0.7, f"Fit: y={popt[0]:.2E}x")
-    plt.scatter(conc, unknown, c='red')
+    try:
+        plt.figure('Calibration')
+        popt, pcov = optimize.curve_fit(func, x, y)
+        conc = unknown / popt[0]
+        end = np.max(np.hstack((x, conc)))
+        plt.plot(np.linspace(0, end, 1000), func(np.linspace(0, end, 1000), *popt),
+                 'k--')
+        plt.text(10, 0.7, f"Fit: y={popt[0]:.2E}x")
+        plt.scatter(conc, unknown, c='red')
 
-    for ii, txt in enumerate(samples):
-        plt.annotate(f"Samp {int(txt)}: {conc[ii]:.2f} $\mu M$",
-                     (conc[ii], unknown[ii]),
-                     (conc[ii] + 5, unknown[ii] - 0.025),
-                     c='red')
-    plt.errorbar(x, y, yerr=e, capsize=3, fmt='ko')
-    plt.grid()
-    # plt.yticks(np.linspace(0, 0.8, 9))
-    plt.xlabel('Concentration ($\mu M$)')
-    plt.ylabel('Double integral of absorption')
-    plt.title('Gd-DOTA calibration curve')
-    plt.tight_layout()
-    plt.savefig(targ + 'calibration.png')
+        for ii, txt in enumerate(samples):
+            plt.annotate(f"Samp {int(txt)}: {conc[ii]:.2f} $\mu M$",
+                         (conc[ii], unknown[ii]),
+                         (conc[ii] + 5, unknown[ii] - 0.025),
+                         c='red')
+        plt.errorbar(x, y, yerr=e, capsize=3, fmt='ko')
+        plt.grid()
+        # plt.yticks(np.linspace(0, 0.8, 9))
+        plt.xlabel('Concentration ($\mu M$)')
+        plt.ylabel('Double integral of absorption')
+        plt.title('Gd-DOTA calibration curve')
+        plt.tight_layout()
+        plt.savefig(targ + 'calibration.png')
+    except ValueError:
+        pass
     # plt.show()
 
 
@@ -144,12 +160,17 @@ def func(x, m):
 
 
 if __name__ == "__main__":
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/08/Conc sweep'
-    print([ii.stem for ii in P(targ).iterdir()])
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/coil calibration'
+    numerical_keyw = True
+    keyw = 'mA'
     make(
         targ=targ,
-        keyw='uM'
+        field=8.62,
+        keyw=keyw,
+        numerical_keyw=numerical_keyw
     )
     calibrate(
-        targ=targ
+        targ=targ,
+        keyw=keyw,
+        numerical_keyw=numerical_keyw
     )

@@ -12,8 +12,8 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2'
-    makeAbs = False
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/check movement'
+    makeAbs = True
 
     if makeAbs:
         make(
@@ -21,7 +21,7 @@ def main(targ="./", makeAbs=True):
             keyw='Light',
             file_suffix='rephased.dat',
             numerical_keyw=False,
-            field=0
+            field=8.62
         )
     compare(targ=targ)
 

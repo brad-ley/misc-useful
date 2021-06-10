@@ -40,7 +40,6 @@ def make(targ='./',
 
     file_length = {}
     
-    print([P(ii).stem for ii in files])
     for file in files:
         lines = [ii.rstrip('\n') for ii in P(file).read_text().split("\n")]
 
@@ -202,8 +201,8 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2/',
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/check movement',
         keyw='Light',
         numerical_keyw=False,
-        center=False,
-        hyster=3.9)
+        center=True,
+        hyster=0)
