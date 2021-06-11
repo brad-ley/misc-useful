@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate, optimize, signal
 
-targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/coil calibration'
+targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/new coil calib/selected amp'
 
 
 def calibrate(targ, fit_Hpp_0=True):
@@ -16,7 +16,11 @@ def calibrate(targ, fit_Hpp_0=True):
 
     :param targ:
     """
-    regex = re.compile(r"_(\d+)mA_")
+    regex = re.compile(r"_(\d+\.*\d*)mA_")
+    # files = [ii for ii in P(targ).iterdir() if ii.name.startswith('dispersion') and ii.name.endswith('exp.txt')]
+    # for f in files:
+    #     print(f.name)
+    #     print(regex.findall(f.name))
     files = sorted([ii for ii in P(targ).iterdir() if ii.name.startswith(
         'dispersion') and ii.name.endswith('exp.txt')], key=lambda x: float(regex.findall(x.name)[0]))
     

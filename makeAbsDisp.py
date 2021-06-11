@@ -142,7 +142,7 @@ def make(targ='./',
             name_keyw = ''.join(
                 ch
                 for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
-                if ch.isdigit() or ch == 'p').replace('p', '.')
+                if ch.isdigit() or ch == 'p' or ch == '.').replace('p', '.')
 
             if name_keyw == '':
                 name_keyw = '0'
@@ -201,8 +201,8 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/check movement',
-        keyw='Light',
-        numerical_keyw=False,
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/new coil calib',
+        keyw='mA',
+        numerical_keyw=True,
         center=True,
         hyster=0)

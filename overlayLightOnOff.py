@@ -12,7 +12,7 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/check movement'
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/chk mvmt 226'
     makeAbs = True
 
     if makeAbs:
@@ -32,7 +32,7 @@ def compare(targ='./'):
 
     filelist = [
         targ + ii for ii in os.listdir(targ)
-        if ii.startswith('dispersion') or ii.startswith('absorption')
+        if (ii.startswith('dispersion') or ii.startswith('absorption')) and ii.endswith('_exp.txt')
     ]
 
     disp_add = False

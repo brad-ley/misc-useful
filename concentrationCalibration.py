@@ -160,8 +160,8 @@ def func(x, m):
 
 
 if __name__ == "__main__":
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/09/coil calibration'
-    numerical_keyw = True
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/new coil calib/selected amp'
+    numerical_keyw = False
     keyw = 'mA'
     make(
         targ=targ,
