@@ -86,7 +86,8 @@ def process(folder=".",
             "_".join(str(avglist[0].name).split("_")[:-1]) + f"_{int(float(wv[-1]))}.csv")
 
         for row in avgdata:
-            outstr += f"{row[0]}, {row[1]}\n"
+            if row[0] > 0:
+                outstr += f"{row[0]}, {row[1]}\n"
         outfile.write_text(outstr)
 
     for AX in [ax, filterax]:

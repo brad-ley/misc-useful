@@ -27,15 +27,15 @@ def process(targ):
 
         for idx, f in enumerate(files):
             header, data = read(f, flipX=False)
-            outdata = np.zeros_like(data)
 
             if idx == 0:
+                outdata = np.zeros_like(data)
                 for row in header.split("\n"):
                     if 'Wavelength:' in row:
                         wv = int(
                             float(("".join([ii for ii in row if ii.isdigit() or ii == "."]))))
             outdata += data
-        outdata[:, 1] = outdata[:, 1] / len(files)
+        outdata /= len(files)
         try:
             os.mkdir(str(exp.parent) + '/processed_data/')
         except FileExistsError:
@@ -45,7 +45,8 @@ def process(targ):
         outstr = ""
 
         for row in outdata:
-            outstr += f"{row[0]}, {row[1]}\n"
+            if row[0] > 0:
+                outstr += f"{row[0]}, {row[1]}\n"
         fileout.write_text(outstr)
         statusBar((ind + 1) / len(experiments) * 100)
 
