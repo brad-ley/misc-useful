@@ -17,7 +17,7 @@ def isNumber(num):
         return False
 
 
-def read(filename, delimiter=','):
+def read(filename, delimiter=',', flipX=True):
     """
     Takes file from EPR computer, removes header, returns header, numpy array
     :args: filename
@@ -66,7 +66,8 @@ def read(filename, delimiter=','):
         elif True in idx_dict['time']:
             idx = idx_dict['time'].index(1)
 
-    if data[idx, 0] < data[idx, -1]:
-        data = np.flipud(data)
+    if flipX:
+        if data[idx, 0] < data[idx, -1]:
+            data = np.flipud(data)
 
     return header, data

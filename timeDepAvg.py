@@ -13,9 +13,9 @@ from readDataFile import read
 
 def main():
     process(
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2/M09/M09_pulsing.dat',
-        5,
-        25,
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/20/sample631/M08_sample631_pulsing.dat',
+        20,
+        60,
         window_frac=100,
         order=2
     )

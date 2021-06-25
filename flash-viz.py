@@ -1,5 +1,5 @@
 #!python3
-
+import os
 import re
 from pathlib import Path as P
 
@@ -11,7 +11,7 @@ from scipy.signal import savgol_filter
 def main():
     ########### CHANGE FOLDER HERE #############
     process(
-        folder=r"/Users/Brad/Desktop"
+        folder=r"/Users/Brad/Downloads/For Max"
     )
     ############################################
 
@@ -37,6 +37,8 @@ def process(folder=".",
     :param windowing: number of points in Savitzky-Golay window
     :param show: show matplotlib plot
     """
+    if P(folder).is_file():
+        folder = str(P(folder).parent)
     filelist = list(P(folder).glob("*" + keyword + "*.dat"))
     if not len(filelist):
         raise ValueError("The folder or keyword is wrong -- no files were found with the parameters given.")
@@ -48,7 +50,13 @@ def process(folder=".",
 
     for idx, exp in enumerate(sorted(experiments)):
         avglist = list(P(folder).glob("*" + "".join(exp) + "*.dat"))
+        outfile = P(folder).joinpath('processed_data').joinpath("_".join(str(avglist[0].name).split("_")[:-1]) + "_average.csv")
+        outstr = ""
         avgdata = False
+        try:
+            os.mkdir(folder + '/processed_data/')
+        except FileExistsError:
+            pass
 
         for idxx, file in enumerate(avglist):
             header, data = read(file)
@@ -62,6 +70,10 @@ def process(folder=".",
             statusBar((idx * len(avglist) + idxx + 1) / len(experiments) /
                       len(avglist) * 100)
         avgdata[:, -1] /= len(avglist)
+        for row in avgdata:
+            outstr += f"{row[0]}, {row[1]}\n"
+        outfile.write_text(outstr)
+
         filteravg = np.copy(avgdata)
 
         filteravg[:, -1] = savgol_filter(
@@ -85,7 +97,7 @@ def process(folder=".",
                         dpi=300)
         elif AX == filterax:
             AX.set_title("Filtered flash photolysis signal vs. log time")
-            filterfig.savefig(P.joinpath(P(folder),
+            filterfig.savefig(P.joinpath(P(folder),"processed_data",
                                          "FILTEREDaveragedUVVisData.png"),
                               dpi=300)
 

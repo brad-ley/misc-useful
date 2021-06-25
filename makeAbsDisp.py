@@ -190,19 +190,19 @@ def make(targ='./',
        
         disp_str = ""
         abs_str = ""
-        for row in curr_data:
-            disp_str += f"{row[1]}, {row[2]}\n"
-            abs_str += f"{row[1]}, {row[4]}\n"
-        for row in curr_data:
-            P(disp_name).write_text(disp_str)
-            P(abs_name).write_text(abs_str)
+        for index, row in enumerate(curr_data):
+            if curr_data[index][1] != curr_data[(index+1)%len(curr_data)][1]:
+                disp_str += f"{row[1]}, {row[2]}\n"
+                abs_str += f"{row[1]}, {row[4]}\n"
+        P(disp_name).write_text(disp_str)
+        P(abs_name).write_text(abs_str)
 
 
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/new coil calib',
-        keyw='mA',
-        numerical_keyw=True,
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2',
+        keyw='Light',
+        numerical_keyw=False,
         center=True,
         hyster=0)

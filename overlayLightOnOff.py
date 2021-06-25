@@ -12,7 +12,9 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/chk mvmt 226'
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/20/sample490/M09_sample490_usweep_LightOff_rephased.dat'
+    if P(targ).is_file():
+        targ = str(P(targ).parent)
     makeAbs = True
 
     if makeAbs:
@@ -21,7 +23,7 @@ def main(targ="./", makeAbs=True):
             keyw='Light',
             file_suffix='rephased.dat',
             numerical_keyw=False,
-            field=8.62
+            field=0
         )
     compare(targ=targ)
 
