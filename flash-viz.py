@@ -37,11 +37,14 @@ def process(folder=".",
     :param windowing: number of points in Savitzky-Golay window
     :param show: show matplotlib plot
     """
+
     if P(folder).is_file():
         folder = str(P(folder).parent)
     filelist = list(P(folder).glob("*" + keyword + "*.dat"))
+
     if not len(filelist):
-        raise ValueError("The folder or keyword is wrong -- no files were found with the parameters given.")
+        raise ValueError(
+            "The folder or keyword is wrong -- no files were found with the parameters given.")
 
     p = re.compile("(wvlth)([0-9]{3})")
     experiments = list(set([p.findall(str(ii))[0] for ii in filelist]))
@@ -50,7 +53,6 @@ def process(folder=".",
 
     for idx, exp in enumerate(sorted(experiments)):
         avglist = list(P(folder).glob("*" + "".join(exp) + "*.dat"))
-        outfile = P(folder).joinpath('processed_data').joinpath("_".join(str(avglist[0].name).split("_")[:-1]) + "_average.csv")
         outstr = ""
         avgdata = False
         try:
@@ -70,18 +72,22 @@ def process(folder=".",
             statusBar((idx * len(avglist) + idxx + 1) / len(experiments) /
                       len(avglist) * 100)
         avgdata[:, -1] /= len(avglist)
-        for row in avgdata:
-            outstr += f"{row[0]}, {row[1]}\n"
-        outfile.write_text(outstr)
 
         filteravg = np.copy(avgdata)
 
         filteravg[:, -1] = savgol_filter(
-                avgdata[:, -1], 2 * (len(avgdata[:, -1]) // windowing) + 1, 2)
+            avgdata[:, -1], 2 * (len(avgdata[:, -1]) // windowing) + 1, 2)
         pw = re.compile("(Wavelength: )([0-9]{3}\.[0-9]{3})")
         wv = pw.findall(header)[0]
         ax.plot(avgdata[:, 0], avgdata[:, -1], label=f"{float(wv[-1]):.1f} nm")
-        filterax.plot(filteravg[:, 0], filteravg[:, -1], label=f"{float(wv[-1]):.1f} nm")
+        filterax.plot(filteravg[:, 0], filteravg[:, -1],
+                      label=f"{float(wv[-1]):.1f} nm")
+        outfile = P(folder).joinpath('processed_data').joinpath(
+            "_".join(str(avglist[0].name).split("_")[:-1]) + f"_{int(float(wv[-1]))}.csv")
+
+        for row in avgdata:
+            outstr += f"{row[0]}, {row[1]}\n"
+        outfile.write_text(outstr)
 
     for AX in [ax, filterax]:
         AX.spines['top'].set_visible(False)
@@ -93,11 +99,12 @@ def process(folder=".",
 
         if AX == ax:
             AX.set_title("Flash photolysis signal vs. log time")
-            fig.savefig(P.joinpath(P(folder), "averagedUVVisData.png"),
+            fig.savefig(P.joinpath(P(folder), "processed_data",
+                                   "averagedUVVisData.png"),
                         dpi=300)
         elif AX == filterax:
             AX.set_title("Filtered flash photolysis signal vs. log time")
-            filterfig.savefig(P.joinpath(P(folder),"processed_data",
+            filterfig.savefig(P.joinpath(P(folder), "processed_data",
                                          "FILTEREDaveragedUVVisData.png"),
                               dpi=300)
 
@@ -160,8 +167,8 @@ def read(filename, delimiter=','):
     if datatypes:
         idx_dict = {'field': ['field' in ii.strip().lower()
                               for ii in datatypes.split(delimiter)],
-                              'time': ['time' in ii.strip().lower()
-                                  for ii in datatypes.split(delimiter)]}
+                    'time': ['time' in ii.strip().lower()
+                             for ii in datatypes.split(delimiter)]}
 
     if True in idx_dict['field']:
         idx = idx_dict['field'].index(1)
