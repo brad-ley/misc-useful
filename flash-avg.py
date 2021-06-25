@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ############### CHANGE FOLDER HERE #################
-targ = '/Users/Brad/Downloads/For Max'
+folder = r"/Users/Brad/Downloads/For Max"
 ############### CHANGE FOLDER HERE #################
 
 
@@ -52,7 +52,7 @@ def statusBar(percent):
 
 
 def main():
-    process(targ)
+    process(folder)
 
 
 if __name__ == "__main__":
