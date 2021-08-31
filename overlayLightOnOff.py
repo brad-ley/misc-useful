@@ -12,29 +12,32 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/20/sample490/M09_sample490_usweep_LightOff_rephased.dat'
+    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/Gd data for Cocoa/selected for poster'
     if P(targ).is_file():
         targ = str(P(targ).parent)
     makeAbs = True
 
+    keyw = 'keyw'
     if makeAbs:
         make(
             targ=targ,
-            keyw='Light',
+            keyw=keyw,
             file_suffix='rephased.dat',
             numerical_keyw=False,
-            field=0
+            field=8.62,
+            center=True
         )
-    compare(targ=targ)
+    compare(targ=targ, keyword=keyw)
 
 
-def compare(targ='./'):
-    if not targ.endswith('/'):
-        targ += '/'
+def compare(targ='./',keyword='Light',normalize=False):
+    keyword = keyword.lower()
+    if P(targ).is_file():
+        targ = str(P(targ).parent)
 
     filelist = [
-        targ + ii for ii in os.listdir(targ)
-        if (ii.startswith('dispersion') or ii.startswith('absorption')) and ii.endswith('_exp.txt')
+        ii for ii in P(targ).iterdir()
+        if (ii.name.startswith('dispersion') or ii.name.startswith('absorption')) and ii.name.endswith('_exp.txt')
     ]
 
     disp_add = False
@@ -43,8 +46,8 @@ def compare(targ='./'):
     for file in filelist:
         legend = ' '.join([
             ii.title() for ii in P(file).stem.split('_') if
-            ('absorption' in ii or 'dispersion' in ii or 'light' in ii.lower())
-        ]).replace('light', '').replace('Absorption', 'Abs').replace('Dispersion', 'Disp')
+            ('absorption' in ii or 'dispersion' in ii or keyword in ii.lower())
+        ]).replace(keyword, '').replace('Absorption', 'Abs').replace('Dispersion', 'Disp')
         header, data = read(file)
         plt.figure('Comparison')
 
@@ -62,7 +65,7 @@ def compare(targ='./'):
         elif 'Abs' in legend:
             data[:, 1] += abs_add
 
-        plt.plot(data[:, 0], data[:, 1], label=legend)
+        plt.plot(data[:, 0], data[:, 1]/np.max(np.abs(data[:, 1])), label=legend)
 
     plt.legend()
     plt.title('Light on/off comparison')
@@ -70,7 +73,7 @@ def compare(targ='./'):
     plt.ylabel('Signal (arb. u)')
     plt.yticks([])
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-    plt.savefig(targ + 'compared.png', dpi=200)
+    plt.savefig(P(targ).joinpath('compared.png'), dpi=200)
     plt.show()
 
 

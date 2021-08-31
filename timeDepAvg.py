@@ -13,10 +13,10 @@ from readDataFile import read
 
 def main():
     process(
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/20/sample631/M08_sample631_pulsing.dat',
-        20,
-        60,
-        window_frac=100,
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/26/try 2/M21_pulsing.dat',
+        40,
+        200,
+        window_frac=0,
         order=2
     )
 
@@ -46,7 +46,7 @@ def process(filename, on, off, window_frac=10, order=2):
     avgi = []
 
     prevlen = 0
-
+    
     while index < len(sig):
         lo = np.where(t >= index * (on + off))[0][0]
         hi = np.where(t < (index + 1) * (on + off))[0][-1]
@@ -97,7 +97,7 @@ def process(filename, on, off, window_frac=10, order=2):
             plt.plot(t[:len(row)], row / np.max(row), alpha=0.3, color='lightgray')
             full += row[:smallen] / np.max(row[:smallen])
         full = full / np.max(full)
-        popt, pcov = curve_fit(biexponential, t[:smallen], full, maxfev=1000000)
+        popt, pcov = curve_fit(biexponential, t[:smallen], full, maxfev=10000000)
         abovelas = np.where(t > on)[0][0]
         plt.plot(t[:smallen], full, label="Raw data")
         plt.plot(np.linspace(t[abovelas], t[smallen]), biexponential(np.linspace(t[abovelas], t[smallen]), *popt), label=r"Fit: $\tau_1$="+f"{popt[2]:.2f}"+r" $s^{-1}$;$\tau_2$="+f"{popt[4]:.2f}"+r" $s^{-1}$")

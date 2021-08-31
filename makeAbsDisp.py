@@ -30,8 +30,8 @@ def make(targ='./',
     :param hyster: (mT) adjusts B-field by hyster value if filename includes 'hyster'
     """
 
-    if not targ.endswith('/'):
-        targ += '/'
+    if P(targ).is_file():
+        targ = str(P(targ).parent)
 
     files = [
         str(ii) for ii in P(targ).iterdir()
@@ -147,21 +147,21 @@ def make(targ='./',
             if name_keyw == '':
                 name_keyw = '0'
         else:
-            name_keyw = "".join([ii for ii in file.split('_') if keyw in ii]).replace(keyw, "")
+            name_keyw = "".join([ii for ii in P(file).name.split('_') if keyw in ii]).replace(keyw, "")
                 
             if name_keyw == '':
                 name_keyw = f"{keyw}{count}"
                 count += 1
 
-        if 'sample' in file.lower():
-            samp = ''.join([
-                ch for ch in str(
-                    [ii for ii in file.split('_') if 'sample' in ii.lower()])
-                if ch.isdigit()
-            ])
-            additional = f'_sample{samp}'
-        else:
-            additional = ''
+        additional = ''
+        if 'samp' not in keyw:
+            if 'sample' in file.lower():
+                samp = ''.join([
+                    ch for ch in str(
+                        [ii for ii in file.split('_') if 'sample' in ii.lower()])
+                    if ch.isdigit()
+                ])
+                additional = f'_sample{samp}'
         
         fname = P(file).stem
         if 'DA' in fname:
@@ -176,10 +176,10 @@ def make(targ='./',
         else:
             DAadd = ''
 
-        disp_name = targ + 'dispersion_' + \
-            name_keyw + keyw + additional + DAadd + '_exp.txt'
-        abs_name = targ + 'absorption_' + \
-            name_keyw + keyw + additional + DAadd + '_exp.txt'
+        disp_name = P(targ).joinpath( 'dispersion_' + \
+            name_keyw + keyw + additional + DAadd + '_exp.txt' )
+        abs_name = P(targ).joinpath( 'absorption_' + \
+            name_keyw + keyw + additional + DAadd + '_exp.txt' )
 
         P(disp_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
         P(abs_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
@@ -201,8 +201,9 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2',
-        keyw='Light',
+        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/08/30/LR/temp comp',
+        keyw='sweep',
         numerical_keyw=False,
-        center=True,
+        center=False,
+        field=0,
         hyster=0)

@@ -8,10 +8,12 @@ from scipy import integrate, optimize, signal
 
 from readDataFile import read
 
-targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/03/Concentrated_AsLOV_cwEPR/Try 2'
+targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/07/406-540'
 
 
 def create(targ):
+    if P(targ).is_file():
+        targ = str(P(targ).parent)
     files = [ii for ii in P(targ).iterdir() if ii.name.endswith(
         '_exp.txt') and ii.name.startswith('dispersion')]
 
