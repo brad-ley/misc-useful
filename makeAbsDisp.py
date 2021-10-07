@@ -192,8 +192,8 @@ def make(targ='./',
         abs_str = ""
         for index, row in enumerate(curr_data):
             if curr_data[index][1] != curr_data[(index+1)%len(curr_data)][1]:
-                disp_str += f"{row[1]}, {row[2]}\n"
-                abs_str += f"{row[1]}, {row[4]}\n"
+                disp_str += f"{row[1] + field}, {row[2]}\n"
+                abs_str += f"{row[1] + field}, {row[4]}\n"
         P(disp_name).write_text(disp_str)
         P(abs_name).write_text(abs_str)
 
@@ -201,9 +201,10 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/08/30/LR/temp comp',
+        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/24',
         keyw='sweep',
+        file_suffix='rephased.dat',
         numerical_keyw=False,
-        center=False,
+        center=True,
         field=0,
         hyster=0)

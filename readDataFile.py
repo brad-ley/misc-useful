@@ -67,7 +67,7 @@ def read(filename, delimiter=',', flipX=True):
             idx = idx_dict['time'].index(1)
 
     if flipX:
-        if data[idx, 0] < data[idx, -1]:
+        if data[0, idx] > data[-1, idx]:
             data = np.flipud(data)
 
     return header, data

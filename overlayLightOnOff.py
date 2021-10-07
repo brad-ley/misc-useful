@@ -12,12 +12,11 @@ from readDataFile import read
 
 
 def main(targ="./", makeAbs=True):
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/Gd data for Cocoa/selected for poster'
     if P(targ).is_file():
         targ = str(P(targ).parent)
     makeAbs = True
 
-    keyw = 'keyw'
+    keyw = 'Light'
     if makeAbs:
         make(
             targ=targ,
@@ -25,7 +24,8 @@ def main(targ="./", makeAbs=True):
             file_suffix='rephased.dat',
             numerical_keyw=False,
             field=8.62,
-            center=True
+            center=True,
+            center_sect=20
         )
     compare(targ=targ, keyword=keyw)
 
@@ -43,39 +43,39 @@ def compare(targ='./',keyword='Light',normalize=False):
     disp_add = False
     abs_add = False
 
+    fig, ax = plt.subplots()
     for file in filelist:
         legend = ' '.join([
             ii.title() for ii in P(file).stem.split('_') if
             ('absorption' in ii or 'dispersion' in ii or keyword in ii.lower())
-        ]).replace(keyword, '').replace('Absorption', 'Abs').replace('Dispersion', 'Disp')
+        ]).replace(keyword, '').replace('Absorption', r"$\chi''$").replace('Dispersion', r"$\chi'$")
         header, data = read(file)
-        plt.figure('Comparison')
 
         # data[:, 1] = subtract(data[:, 1])
 
-        if not disp_add:
-            if 'Disp' in legend:
-                disp_add = np.max(data[:, 1])
-        if not abs_add:
-            if 'Abs' in legend:
-                abs_add = np.min(data[:, 1])
+        data[:, 1] /= np.max(np.abs(data[:, 1]))
 
-        if 'Disp' in legend:
-            data[:, 1] += disp_add
-        elif 'Abs' in legend:
-            data[:, 1] += abs_add
+        if r"$\chi''$" in legend:
+            data[:, 1] += 1
+        if r"$\chi'$" in legend:
+            data[:, 1] -= 1
 
-        plt.plot(data[:, 0], data[:, 1]/np.max(np.abs(data[:, 1])), label=legend)
+        print(disp_add, abs_add)
 
-    plt.legend()
-    plt.title('Light on/off comparison')
-    plt.xlabel('Field (T)')
-    plt.ylabel('Signal (arb. u)')
-    plt.yticks([])
-    plt.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-    plt.savefig(P(targ).joinpath('compared.png'), dpi=200)
+        ax.plot(data[:, 0], data[:, 1], label=legend)
+
+    ax.legend()
+    ax.set_title('Light on/off comparison')
+    ax.set_xlabel('Field (T)')
+    ax.set_ylabel('Signal (arb. u)')
+    ax.set_yticks([])
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.savefig(P(targ).joinpath('compared.png'), dpi=200)
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/23/537_old/compare single and double'
+    main(targ=targ)
