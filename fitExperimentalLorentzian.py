@@ -36,12 +36,15 @@ def main(filename):
     ab = dab[:, 1]
     disp = ddisp[:, 1]
     f = dab[:, 0] - 8.62
+    f *= 1e4 
 
     mag = np.abs(ab + 1j * disp)
     mag /= np.max(mag)
     lw = fwhm(f, cumtrapz(ab))
     print(f"fwhm is {lw*1e4:.2f} G")
     popt, _ = cf(magnitude, f, mag, p0=[1.7e-3, 5e-4, 1], maxfev=10000)
+    f -= popt[0]
+    popt[0] = 0
 
     fig, ax = plt.subplots()
     # ax.plot(f, ab/np.max(ab))
@@ -51,7 +54,10 @@ def main(filename):
     ax.plot(f, lorentzianabs(f, *popt[:-1]) /
             np.max(lorentzianabs(f, *popt[:-1])))
     ax.plot(f, lorentziandisp(f, *popt[:-1]) /
-            np.max(lorentziandisp(f, *popt[:-1])))
+            np.max(lorentzianabs(f, *popt[:-1])))
+    ax.set_xlabel(r'$\omega-\omega_0$' + f" (G)")
+    ax.set_ylabel(r'Intensity (plots scaled to 1)')
+    # ax.set_xticks([])
 
     print(f"Linewidth: {popt[1]*1e4*2:.2f} G")
 

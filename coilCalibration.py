@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate, optimize, signal
 
-targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/11/new coil calib/selected amp'
+targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/06/11/new coil calib'
 
 
 def calibrate(targ, fit_Hpp_0=True):
@@ -35,7 +35,7 @@ def calibrate(targ, fit_Hpp_0=True):
         mod.append(float(regex.findall(f.name)[0]))
         if i == 0:
             Hpp = np.abs(field[np.argmax(absorptive)] - field[np.argmin(absorptive)])
-  
+ 
     forced_fit = lambda x, scale: fit(x, scale, Hpp)
     fig, ax = plt.subplots()
     ax.plot(mod, lw)

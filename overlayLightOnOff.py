@@ -60,8 +60,6 @@ def compare(targ='./',keyword='Light',normalize=False):
         if r"$\chi'$" in legend:
             data[:, 1] -= 1
 
-        print(disp_add, abs_add)
-
         ax.plot(data[:, 0], data[:, 1], label=legend)
 
     ax.legend()
@@ -77,5 +75,5 @@ def compare(targ='./',keyword='Light',normalize=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/23/537_old/compare single and double'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/10/27'
     main(targ=targ)
