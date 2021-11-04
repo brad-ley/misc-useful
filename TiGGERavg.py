@@ -12,13 +12,14 @@ from scipy.signal import welch
 
 from readDataFile import read
 from statusBar import statusBar
+from TiGGERdemod import candan, kusljevic
 
-targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/30/later/normal_acq_3200/'
+targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/30/later/normal_acq_3200'
 frac = 0.05  # min height to appear in COM calculation
 delta = 5e6
 n = 9  # 1/2**n*1/(max time) for finding min usable frequency
 rd = -1
-Q = 0.0045
+Q = 0.01
 
 
 def COM(x, y, frac=0.1, delta=10e6, min_freq=5e3):
@@ -74,68 +75,85 @@ def main(targ):
             0][0]
         data = np.insert(data, 0, np.linspace(
             0, (data.shape[0] - 1) * dt, data.shape[0]), axis=1)
-        w = signal.blackman(data.shape[0])
         freq = np.fft.fftfreq(data.shape[0], dt)
         cpx = data[:, 1] + 1j * data[:, 2]
         cpx_og = np.copy(cpx)
         ref = False
         mf = 1 / (2**n * (data[-1, 0] - data[0, 0]))
 
-        ### demodulate at COM peak ###
-        final = False
-        fft = np.fft.fft(cpx * w)
-        # fftax.plot(freq, np.abs(fft), label='start')
-        com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
+        # ### demodulate at COM peak ###
+        # final = False
+        # fft = np.fft.fft(cpx * signal.blackman(len(cpx)))
+        # # fftax.plot(freq, np.abs(fft), label='start')
+        # com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
 
-        freqs = []
-        ii = 1
+        # freqs = []
+        # ii = 1
     
-        # print(f"MF: {mf:.1f}")
-        while not found and round(com_pk, rd) not in freqs:
-            freqs.append(round(com_pk, rd))
-            cpx *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
-            fft = np.fft.fft(cpx * w)
-            # fftax.plot(freq, np.abs(fft), label=f'loop {ii}')
-            ii += 1
-            com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
-            # print(f"COM: {com_pk:.1f}, True: {found}")
-            if np.isnan(com_pk):
-                raise "Error"
+        # # print(f"MF: {mf:.1f}")
+        # while not found and round(com_pk, rd) not in freqs:
+        #     freqs.append(round(com_pk, rd))
+        #     cpx *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+        #     fft = np.fft.fft(cpx * signal.blackman(len(cpx)))
+        #     # fftax.plot(freq, np.abs(fft), label=f'loop {ii}')
+        #     ii += 1
+        #     com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
+        #     # print(f"COM: {com_pk:.1f}, True: {found}")
+        #     if np.isnan(com_pk):
+        #         raise "Error"
 
-        if found:
-            cpx *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+        # if found:
+        #     cpx *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+        # ### done demodulating ###
+        # cpx = candan(data, freq)
+        cpx = kusljevic(data, freq)
 
-        fft = np.fft.fft(cpx * w)
+        fft = np.fft.fft(cpx * signal.blackman(len(cpx)))
         # fftax.plot(freq, np.abs(fft), label='end')
         # fftax.legend()
-        if np.std(np.real(cpx)) < Q and np.std(np.imag(cpx)) < Q:
+        # r = np.std(np.real(cpx)) * np.mean(np.abs(np.real(cpx)))
+        # i = np.std(np.imag(cpx)) * np.mean(np.abs(np.imag(cpx)))
+        r = np.std(np.real(cpx))
+        i = np.std(np.imag(cpx))
+        rr = 0 
+        ii = 0
+        if (r < Q and i < Q):
             if not ref:
                 ref = cpx_og
                 avg = np.zeros_like(cpx_og)
             phi = np.angle(np.dot(np.conjugate(cpx_og), ref))
             cpx_og *= np.exp(1j * phi)
             avg += cpx_og
-            reject = 1
             axgscaty.append(np.mean(cpx))
-            axgscatxr.append(np.std(np.real(cpx)))
-            axgscatxi.append(np.std(np.imag(cpx)))
+            axgscatxr.append(r)
+            axgscatxi.append(i)
             axgscatxm.append(np.std(np.abs(cpx)))
-        else:
-            reject = 0
+        elif r > Q:
+            rr = 1
             axgrey.append(np.mean(cpx))
-            axgrexr.append(np.std(np.real(cpx)))
-            axgrexi.append(np.std(np.imag(cpx)))
+            axgrexr.append(r)
+            axgrexi.append(i)
+            axgrexm.append(np.std(np.abs(cpx)))
+        elif i > Q:
+            qq = 1
+            axgrey.append(np.mean(cpx))
+            axgrexr.append(r)
+            axgrexi.append(i)
             axgrexm.append(np.std(np.abs(cpx)))
 
-        add = i * np.mean(np.abs(cpx)) * 1.1
-
         l = 0.75
-        axp[reject].plot(data[:, 0], np.real(cpx), alpha=l)
-        axp[reject].plot(data[:, 0], np.imag(cpx), alpha=l)
-        axp[reject].plot(data[:, 0], np.abs(cpx), alpha=l)
+        if (not rr) and (not ii) :
+            axp[1].plot(data[:len(cpx), 0], np.real(cpx), alpha=l, label=f"{r:.2e}")
+            axp[1].plot(data[:len(cpx), 0], np.imag(cpx), alpha=l, label=f"{i:.2e}")
+        elif rr:
+            axp[0].plot(data[:len(cpx), 0], np.real(cpx), alpha=l, label=f"{r:.2e}")
+        elif ii:
+            axp[0].plot(data[:len(cpx), 0], np.imag(cpx), alpha=l, label=f"{i:.2e}")
         tot_phases.append(
             f"{np.arctan2(np.sum(np.imag(cpx)), np.sum(np.real(cpx))):.3f}")
-
+    
+    axp[0].legend()
+    axp[1].legend()
     axg.scatter(np.abs(np.real(axgscaty)), axgscatxr
         , c='blue', alpha=1, label='real')
     axg.scatter(np.abs(np.imag(axgscaty)), axgscatxi
@@ -160,10 +178,10 @@ def main(targ):
     axg.axhline(Q, c='gray', alpha=0.5, ls="--")
 
     avg /= len(fs)
-    fft = np.fft.fft(avg * w)
+    fft = np.fft.fft(avg * signal.blackman(len(avg)))
     ff, aax = plt.subplots()
     aax.plot(data[:, 0], np.real(avg))
-    aax.plot(data[:, 0], np.real(avg * w))
+    aax.plot(data[:, 0], np.real(avg * signal.blackman(len(avg))))
     aax.set_title("Average before demodulation")
     aax.set_xlabel("Time (s)")
     aax.set_ylabel("Signal (arb. u)")
@@ -177,21 +195,28 @@ def main(targ):
     ax[1].set_ylabel("Signal (arb. u)")
     ax[1].set_xlabel("Freq (Hz)")
 
-    final = False
-    com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
+    # ### demodulate at COM ###
+    # final = False
+    # com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
 
-    freqs = []
+    # freqs = []
 
-    while not found and round(com_pk, rd) not in freqs:
-        freqs.append(round(com_pk, rd))
-        avg *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
-        fft = np.fft.fft(avg * w)
-        com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
+    # while not found and round(com_pk, rd) not in freqs:
+    #     freqs.append(round(com_pk, rd))
+    #     avg *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+    #     fft = np.fft.fft(avg * signal.blackman(len(avg)))
+    #     com_pk, found = COM(freq, fft, frac=frac, delta=delta, min_freq=mf)
 
-    if found:
-        avg *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+    # if found:
+    #     avg *= np.exp(-1j * 2 * np.pi * com_pk * data[:, 0])
+    # # data[:, 1] = np.real(avg)
+    # # data[:, 2] = np.imag(avg)
+    # ### done demodulating at COM ###
 
-    ax[1].plot(freq, np.abs(np.fft.fft(avg * w)), label="avg after demod")
+    # avg = candan(data, freq)
+    avg = kusljevic(data, freq)
+
+    ax[1].plot(freq[:len(avg)], np.abs(np.fft.fft(avg * signal.blackman(len(avg)))), label="avg after demod")
 
     ax[1].legend()
 
@@ -199,11 +224,11 @@ def main(targ):
     a.set_title("Averaged demodulated")
     a.set_xlabel("Time (s)")
     a.set_ylabel("Signal (arb. u)")
-    a.plot(data[:, 0], np.real(avg))
-    a.plot(data[:, 0], np.imag(avg))
-    a.plot(data[:, 0], np.abs(avg))
+    a.plot(data[:len(avg), 0], np.real(avg))
+    a.plot(data[:len(avg), 0], np.imag(avg))
+    a.plot(data[:len(avg), 0], np.abs(avg))
     # a.set_ylim([0, np.max(np.abs(avg))*1.05])
-    for fg in [fig, figp, figg, f, ff]:
+    for fg in [fig, figg, f, ff]:
         fg.tight_layout()
     plt.show()
 

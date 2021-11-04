@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path as P
 from pathlib import PurePath as PP
+from scipy.integrate import cumtrapz
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,26 +18,30 @@ def main(targ="./", makeAbs=True):
     makeAbs = True
 
     keyw = 'Light'
+
     if makeAbs:
         make(
             targ=targ,
             keyw=keyw,
             file_suffix='rephased.dat',
             numerical_keyw=False,
-            field=8.62,
-            center=True,
+            field=0,
+            center=False,
             center_sect=20
         )
-    compare(targ=targ, keyword=keyw)
+    # compare(targ=targ, keyword=keyw)
+    compare(targ=targ, keyword=keyw, integral=True)
 
 
-def compare(targ='./',keyword='Light',normalize=False):
+def compare(targ='./', keyword='Light', normalize=False, integral=False):
     keyword = keyword.lower()
+
     if P(targ).is_file():
         targ = str(P(targ).parent)
 
     filelist = [
         ii for ii in P(targ).iterdir()
+
         if (ii.name.startswith('dispersion') or ii.name.startswith('absorption')) and ii.name.endswith('_exp.txt')
     ]
 
@@ -44,6 +49,7 @@ def compare(targ='./',keyword='Light',normalize=False):
     abs_add = False
 
     fig, ax = plt.subplots()
+
     for file in filelist:
         legend = ' '.join([
             ii.title() for ii in P(file).stem.split('_') if
@@ -53,14 +59,21 @@ def compare(targ='./',keyword='Light',normalize=False):
 
         # data[:, 1] = subtract(data[:, 1])
 
-        data[:, 1] /= np.max(np.abs(data[:, 1]))
+        int_add = ""
+        if integral:
+            if r"$\chi''$" in legend:
+                ax.plot(data[:-1, 0], cumtrapz(data[:, 1]) / np.max(cumtrapz(data[:, 1])), label=legend)
+                int_add += "_int" 
+        else:
+            data[:, 1] /= np.max(np.abs(data[:, 1]))
 
-        if r"$\chi''$" in legend:
-            data[:, 1] += 1
-        if r"$\chi'$" in legend:
-            data[:, 1] -= 1
+            if r"$\chi''$" in legend:
+                data[:, 1] += 1
 
-        ax.plot(data[:, 0], data[:, 1], label=legend)
+            if r"$\chi'$" in legend:
+                data[:, 1] -= 1
+
+            ax.plot(data[:, 0], data[:, 1], label=legend)
 
     ax.legend()
     ax.set_title('Light on/off comparison')
@@ -70,10 +83,10 @@ def compare(targ='./',keyword='Light',normalize=False):
     ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    fig.savefig(P(targ).joinpath('compared.png'), dpi=200)
+    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), dpi=200)
     plt.show()
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/10/27'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/3/both today'
     main(targ=targ)

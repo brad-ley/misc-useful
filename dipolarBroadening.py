@@ -26,11 +26,20 @@ def main(targ='./'):
         data[:, 1] -= data[0, 1]
         data[:, 1] /= np.abs(np.min(data[:, 1]))
         data[:, 1] /= np.max(data[:, 1])
-        ax.plot(data[:, 0], data[: ,1], label=''.join([ii for ii in str(f).split('_') if 'sample' in ii]))
+        ax.plot(1e3 * data[:, 0], data[:, 1], label=''.join([ii.strip('sample').strip('sweep')
+                                                             for ii in str(f).split('_') if 'sample' in ii or 'sweep' in ii]))
+
+    for s in ['top', 'right']:
+        ax.spines[s].set_visible(False)
+    ax.set_ylabel('Signal (arb. u)')
+    ax.set_yticks([])
+    ax.set_xlabel('Field (mT)')
+    ax.set_title('Dipolar broadened spectra')
     plt.legend()
 
     plt.savefig(P(targ).joinpath('dipolar_compare.png'), dpi=300)
 
+
 if __name__ == "__main__":
-    main(targ='/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/06')
+    main(targ='/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/1/537-406')
     plt.show()
