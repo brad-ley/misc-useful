@@ -5,19 +5,20 @@ from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
+from scipy.signal import savgol_filter
 
 from readDataFile import read
 
 
 def main():
     process(
-        '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/07/26/try 2/M21_pulsing.dat',
-        40,
-        200,
-        window_frac=0,
-        order=2
+        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/23/40 p/M11_pulsing.dat',
+        15,
+        30,
+        window_frac=50,
+        order=3,
+        bi=False
     )
 
 
@@ -25,7 +26,11 @@ def biexponential(x, A, a1, t1, a2, t2):
     return A + a1 * np.exp(- x / t1) + a2 * np.exp(-x / t2)
 
 
-def process(filename, on, off, window_frac=10, order=2):
+def exponential(x, A, a1, t1):
+    return A + a1 * np.exp(- x / t1)
+
+
+def process(filename, on, off, window_frac=10, order=2, bi=True):
     """process.
 
     :param filename: input filename
@@ -33,6 +38,7 @@ def process(filename, on, off, window_frac=10, order=2):
     :param off: off-time for laser
     :window_frac: reciprocal of data length for window choice
     :order: savgol_filter polyfit order
+    :bi: biexponential fit
     """
     header, data = read(filename)
     t = data[:, 0]
@@ -46,7 +52,7 @@ def process(filename, on, off, window_frac=10, order=2):
     avgi = []
 
     prevlen = 0
-    
+
     while index < len(sig):
         lo = np.where(t >= index * (on + off))[0][0]
         hi = np.where(t < (index + 1) * (on + off))[0][-1]
@@ -54,13 +60,13 @@ def process(filename, on, off, window_frac=10, order=2):
         if np.abs(hi - lo) < prevlen * 0.9:
             break
 
-        if window_frac == 0: # use 0 to not do savgol filtering
+        if window_frac == 0:  # use 0 to not do savgol filtering
             avgsig.append(
                 np.abs(sig[lo:hi]))
             avgr.append(
                 np.real(r[lo:hi]) + 1j * np.imag(r[lo:hi]))
             avgi.append(
-                np.real(i[lo:hi]) + 1j*np.imag(i[lo:hi]))
+                np.real(i[lo:hi]) + 1j * np.imag(i[lo:hi]))
         else:
             avgsig.append(savgol_filter(
                 np.abs(sig[lo:hi]), (2 * (np.abs(hi - lo) // window_frac) + 1), order))
@@ -82,37 +88,56 @@ def process(filename, on, off, window_frac=10, order=2):
     full = np.zeros(smallen)
 
     plots = {"Average mag": avgsig, "Ch1 real": avgr, "Ch1 imag":
-        avgr, "Ch2 real": avgi, "Ch2 imag": avgi}
-        # avgr, "Ch2 real": avgi, "Ch2 imag": avgi}
+             avgr, "Ch2 real": avgi, "Ch2 imag": avgi}
+    # avgr, "Ch2 real": avgi, "Ch2 imag": avgi}
 
     for plot, dat in plots.items():
         plt.figure(plot)
+
         for row in dat:
             if "real" in plot:
                 row = np.real(row)
             elif "imag" in plot:
                 row = np.imag(row)
+
             if np.min(row) < 0:
                 row -= np.min(row)
-            plt.plot(t[:len(row)], row / np.max(row), alpha=0.3, color='lightgray')
-            full += row[:smallen] / np.max(row[:smallen])
+            plt.plot(t[:len(row)], row / np.max(row),
+                     alpha=0.3, color='lightgray')
+            # full += row[:smallen]
+            full += row[:smallen] / np.max(np.abs(row[:smallen]))
         full = full / np.max(full)
-        popt, pcov = curve_fit(biexponential, t[:smallen], full, maxfev=10000000)
         abovelas = np.where(t > on)[0][0]
         plt.plot(t[:smallen], full, label="Raw data")
-        plt.plot(np.linspace(t[abovelas], t[smallen]), biexponential(np.linspace(t[abovelas], t[smallen]), *popt), label=r"Fit: $\tau_1$="+f"{popt[2]:.2f}"+r" $s^{-1}$;$\tau_2$="+f"{popt[4]:.2f}"+r" $s^{-1}$")
+        amp_guess = 0.2 # amplitude of exponential decay
+        bl_guess = 0.5 # starting point of decay
+        tau_guess = 50 # time constant guess 
+
+        if bi:
+            popt, pcov = curve_fit(biexponential, t[:smallen], full, maxfev=10000000, p0=[
+                                   bl_guess, amp_guess, tau_guess, amp_guess, tau_guess])
+            plt.plot(np.linspace(t[abovelas], t[smallen]), biexponential(np.linspace(t[abovelas], t[smallen]), *popt),
+                     label=r"Fit: $\tau_1$=" + f"{popt[2]:.2f}" + r" s$^{-1}$;$\tau_2$=" + f"{popt[4]:.2f}" + r" s$^{-1}$")
+        else:
+            popt, pcov = curve_fit(
+                exponential, t[:smallen], full, maxfev=10000000, p0=[bl_guess, amp_guess, tau_guess])
+            plt.plot(np.linspace(t[abovelas], t[smallen]), exponential(np.linspace(
+                t[abovelas], t[smallen]), *popt), label=r"Fit: $\tau_1$=" + f"{popt[2]:.2f}" + r" s$^{-1}$")
+
         plt.legend()
         rang = np.max(full) - np.min(full)
-        plt.annotate('Laser\npulse', (on/2, np.max(full)), color='gray', horizontalalignment='center')
-        plt.ylim(np.min(full) - rang/4, np.max(full) + rang/4)
+        plt.annotate('Laser\npulse', (on / 2, np.max(full)),
+                     color='gray', horizontalalignment='center')
+        plt.ylim(np.min(full) - rang / 4, np.max(full) + rang / 4)
         plt.axvspan(0, on, facecolor='palegreen')
         plt.title(plot)
+
         if plot == "Ch2 imag":
             plt.title("Time-resolved EPR absoption vs. time")
         plt.ylabel('Normalized signal')
         plt.xlabel('Time (s)')
         full = np.zeros(smallen)
-        plt.savefig(P(filename).parent.joinpath(f"{plot}.png"))
+        plt.savefig(P(filename).parent.joinpath(f"{plot}.png"), dpi=300)
 
     plt.show()
 

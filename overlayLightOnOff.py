@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path as P
 from pathlib import PurePath as PP
-from scipy.integrate import cumtrapz
+from scipy.integrate import trapz, cumtrapz
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,7 +30,8 @@ def main(targ="./", makeAbs=True):
             center_sect=20
         )
     # compare(targ=targ, keyword=keyw)
-    compare(targ=targ, keyword=keyw, integral=True)
+    compare(targ=targ, keyword=keyw, normalize=True)
+    # compare(targ=targ, keyword=keyw, integral=True)
 
 
 def compare(targ='./', keyword='Light', normalize=False, integral=False):
@@ -65,15 +66,22 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
                 ax.plot(data[:-1, 0], cumtrapz(data[:, 1]) / np.max(cumtrapz(data[:, 1])), label=legend)
                 int_add += "_int" 
         else:
-            data[:, 1] /= np.max(np.abs(data[:, 1]))
+            if normalize:
+                data[:, 1] /= np.max(np.abs(data[:, 1]))
+            # data[:, 1] /= np.abs(np.min(data[:, 1]))
+                # data[:, 1] /= np.max(data[:, 1])
 
             if r"$\chi''$" in legend:
+                ax.plot(data[:, 0], data[:, 1], label=legend)
+                spins = trapz(cumtrapz(data[:, 1]))
                 data[:, 1] += 1
+
+                print(f'{file.stem} spins {abs(spins):.2e}')
 
             if r"$\chi'$" in legend:
                 data[:, 1] -= 1
 
-            ax.plot(data[:, 0], data[:, 1], label=legend)
+            # ax.plot(data[:, 0], data[:, 1], label=legend)
 
     ax.legend()
     ax.set_title('Light on/off comparison')
@@ -88,5 +96,5 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/3/both today'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/23/40 p'
     main(targ=targ)
