@@ -12,6 +12,12 @@ def func(xdata, freq, a, b, d, phi):
 
 
 def process(filename, subtract_bkg=False, savgol=False):
+    """process.
+
+    :param filename: input .dat filename
+    :param subtract_bkg: bool to subtract background
+    :param savgol: bool to apply Savitzky-Golay filtering
+    """
     header, data = read(filename)
 
     data_array = np.array(data)
