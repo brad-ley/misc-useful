@@ -13,10 +13,10 @@ from readDataFile import read
 
 def main():
     process(
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/23/40 p/M11_pulsing.dat',
-        15,
-        30,
-        window_frac=50,
+        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/7/20%/M11_pulsing.dat',
+        5,
+        355,
+        window_frac=0,
         order=3,
         bi=False
     )

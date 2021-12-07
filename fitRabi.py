@@ -23,21 +23,17 @@ def process(filename, subtract_bkg=False, savgol=False):
     data_array = np.array(data)
     data_dict = {
         'param': 1E6 * data_array[:, 0],
-        'echo': data_array[:, 3],
-        'bkg': data_array[:, 4],
+        'echo': data_array[:, 1],
     }
     
     x = data_dict['param']
     add = ''
-    if subtract_bkg:
-        dat = data_dict['echo'] - data_dict['bkg']
-        add += 'subtract_bkg_'
-    else:
-        dat = data_dict['echo']
 
+    dat = data_dict['echo']
     if savgol:
-        dat = savgol_filter(dat, 2*(len(x)//10)+1, 3)
+        dat = savgol_filter(dat, 2*(len(x)//20)+1, 3)
         add += 'savgol_'
+
 
     savename = P(filename).parent.joinpath(add + 'Rabi.png')
     popt, pcov = cf(func, x, dat)
@@ -63,7 +59,7 @@ def process(filename, subtract_bkg=False, savgol=False):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/29/M16_RabiE_000.dat'
-    process(f, subtract_bkg=True, savgol=True)
-    process(f)
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/30/M01_rabi_001.dat'
+    process(f, savgol=True)
+    # process(f)
     plt.show()

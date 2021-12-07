@@ -11,7 +11,7 @@ from scipy.signal import find_peaks as fp
 
 from readDataFile import read
 
-filename = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/30/looped/test_0.dat'
+filename = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/Tigger test 1/try2/just one/test_0.dat'
 
 
 def main(datafile, first=False):
@@ -25,7 +25,7 @@ def main(datafile, first=False):
     ax[0].plot(data[:, 0], data[:, 1])
     ax[0].plot(data[:, 0], data[:, 2])
 
-    cpx = kusljevic(data, freq, ax)
+    cpx = candan(data, freq, ax)
 
     if first:
         for d in ax[:2]:
@@ -34,12 +34,12 @@ def main(datafile, first=False):
         ax[2].legend()
         ax[2].set_xlim([0, np.max(freq)])
 
-    a.plot(data[:, 0], np.real(cpx))
-    a.plot(data[:, 0], np.imag(cpx))
-    a.plot(data[:, 0], np.abs(cpx))
+    a.plot(data[:len(cpx), 0], np.real(cpx))
+    a.plot(data[:len(cpx), 0], np.imag(cpx))
+    a.plot(data[:len(cpx), 0], np.abs(cpx))
 
 
-def kusljevic(data, freq, axes="", freqs=[]):
+def kusljevic(data, freq, axes=[], freqs=[]):
     """kusljevic. returns demodulated signal using Kusljevic technique from 
     https://doi.org/10.1109/TIM.2003.822707 
 
@@ -65,17 +65,17 @@ def kusljevic(data, freq, axes="", freqs=[]):
     # print(x[:5], "...", x[-5:])
     f = np.arccos(x)/(2*np.pi*dt)
     
-    if axes != "":
-        axes[1].plot(data[:, 0], np.real(cpx), label=f"r")
-        axes[1].plot(data[:, 0], np.imag(cpx), label=f"i")
-    # axes[2].plot(freq, np.abs(fft), label=f"")
-
     cpx = data[:len(f), 1] + 1j * data[:len(f), 2]
     cpx *= np.exp(-1j * 2 * np.pi * f[-1] * data[:len(f), 0])
+    if len(axes):
+        axes[1].plot(data[:len(f), 0], np.real(cpx), label=f"r")
+        axes[1].plot(data[:len(f), 0], np.imag(cpx), label=f"i")
+    # axes[2].plot(freq, np.abs(fft), label=f"")
+
     return cpx
 
 
-def candan(data, freq, axes="", freqs=[]):
+def candan(data, freq, axes=[], freqs=[]):
     """candan. returns demodulated signal using Candan demodulation technique 
     from https://doi.org/10.1016/j.sigpro.2013.05.021
 
@@ -97,7 +97,7 @@ def candan(data, freq, axes="", freqs=[]):
     fs = np.max(freq) - np.min(freq)
     cpx *= np.exp(-1j * 2 * np.pi * (d + p) * fs / len(cpx) * data[:, 0])
 
-    if axes != "":
+    if len(axes):
         axes[1].plot(data[:, 0], np.real(cpx), label=f"r")
         axes[1].plot(data[:, 0], np.imag(cpx), label=f"i")
     # axes[2].plot(freq, np.abs(fft), label=f"")
@@ -105,7 +105,7 @@ def candan(data, freq, axes="", freqs=[]):
     return cpx
 
 
-def iterate(data, freq, axes="", freqs=[]):
+def iterate(data, freq, axes=[], freqs=[]):
     cpx = data[:, 1] + 1j * data[:, 2]
     fft = np.fft.fft(cpx)
     distance = np.where(freq > 5e6)[0][0]  # ~10 MHz spacing between peaks
@@ -123,7 +123,7 @@ def iterate(data, freq, axes="", freqs=[]):
         i += 1
         cpx *= np.exp(-1j * 2 * np.pi * np.abs(freq[p]) * data[:, 0])
 
-        if axes != "":
+        if len(axes):
             axes[1].plot(data[:, 0], np.real(cpx), label=f"pass {i} r")
             axes[1].plot(data[:, 0], np.imag(cpx), label=f"pass {i} i")
         fft = np.fft.fft(cpx)

@@ -29,8 +29,8 @@ def main(targ="./", makeAbs=True):
             center=False,
             center_sect=20
         )
-    # compare(targ=targ, keyword=keyw)
-    compare(targ=targ, keyword=keyw, normalize=True)
+    compare(targ=targ, keyword=keyw)
+    # compare(targ=targ, keyword=keyw, normalize=True)
     # compare(targ=targ, keyword=keyw, integral=True)
 
 
@@ -84,7 +84,10 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
             # ax.plot(data[:, 0], data[:, 1], label=legend)
 
     ax.legend()
-    ax.set_title('Light on/off comparison')
+    title = 'Light on/off comparison'
+    if normalize:
+        title += ' (normalized to max)'
+    ax.set_title(title)
     ax.set_xlabel('Field (T)')
     ax.set_ylabel('Signal (arb. u)')
     ax.set_yticks([])
@@ -96,5 +99,5 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/23/40 p'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/7/30%'
     main(targ=targ)

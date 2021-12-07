@@ -201,10 +201,10 @@ def make(targ='./',
 if __name__ == "__main__":
     make(
         targ=
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/16/g=2 sweep Ficoll',
-        keyw='Light',
+        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/2',
+        keyw='M',
         file_suffix='rephased.dat',
         numerical_keyw=False,
-        center=True,
+        center=False,
         field=0,
         hyster=0)

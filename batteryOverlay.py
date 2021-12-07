@@ -9,7 +9,7 @@ from scipy.integrate import cumtrapz
 
 from readDataFile import read
 
-targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/09/24'
+targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/2'
 
 
 def overlay(targ, low=-1, high=-1):
@@ -25,7 +25,7 @@ def overlay(targ, low=-1, high=-1):
         'absorption') and ii.name.endswith('_exp.txt')]
     fig, ax = plt.subplots()
     figtrapz, axtrapz = plt.subplots()
-
+    
     for i, f in enumerate(fs):
         h, d = read(str(f))
         d[:, 1] = d[:, 1] - np.average(d[:, 1])
@@ -34,7 +34,7 @@ def overlay(targ, low=-1, high=-1):
                 if d[0, 0] < plotlow:
                     plotlow = d[0, 0]
             else:
-                    plotlow = d[0, 0]
+                plotlow = d[0, 0]
         else:
             plotlow = low
         if high == -1:
@@ -51,23 +51,26 @@ def overlay(targ, low=-1, high=-1):
                              0][0]:np.where(plothigh < d[:, 0])[0][0], 1]))
             ax.plot(d[:, 0], d[:, 1] / scale, label=f"{f.name.split('_')[1]}")
             axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / scale, label=f"{f.name.split('_')[1]}")
-        except IndexError:
+        except (IndexError, UnboundLocalError):
             ax.plot(d[:, 0], d[:, 1] / np.max(d[:, 1]), label=f"{f.name.split('_')[1]}")
             axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / np.max(cumtrapz(d[:, 1])), label=f"{f.name.split('_')[1]}")
 
-    for a in [ax, axtrapz]:
-        a.set_xlim([plotlow, plothigh])
-        a.set_yticks([])
-        a.set_ylabel('Signal (arb. u)')
-        a.set_xlabel('Field (T)')
-        a.spines['right'].set_visible(False)
-        a.spines['top'].set_visible(False)
-        a.legend()
+    try:
+        for a in [ax, axtrapz]:
+            a.set_xlim([plotlow, plothigh])
+            a.set_yticks([])
+            a.set_ylabel('Signal (arb. u)')
+            a.set_xlabel('Field (T)')
+            a.spines['right'].set_visible(False)
+            a.spines['top'].set_visible(False)
+            a.legend()
 
-    plt.tight_layout()
-    fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300)
+        plt.tight_layout()
+        fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300)
 
-    plt.show()
+        plt.show()
+    except UnboundLocalError:
+        print("Need to create absorption files with makeAbsDisp.py first!")
 
 
 def main():
