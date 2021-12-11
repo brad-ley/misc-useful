@@ -14,7 +14,6 @@ targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/2'
 
 def overlay(targ, low=-1, high=-1):
     """overlay.
-
     :param targ: directory with 'absorption' files
     :param low: low field for plotting
     :param high: high field for plotting

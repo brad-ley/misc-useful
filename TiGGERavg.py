@@ -14,7 +14,6 @@ from readDataFile import read
 from statusBar import statusBar
 from TiGGERdemod import candan, kusljevic
 
-targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/1/Tigger test 1'
 frac = 0.05  # min height to appear in COM calculation
 delta = 5e6
 n = 9  # 1/2**n*1/(max time) for finding min usable frequency
@@ -252,4 +251,5 @@ def main(targ, method='com'):
 
 
 if __name__ == "__main__":
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/2/tigger 1'
     main(targ)
