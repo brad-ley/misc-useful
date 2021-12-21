@@ -8,8 +8,7 @@ import numpy as np
 from scipy.integrate import cumtrapz
 
 from readDataFile import read
-
-targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/2'
+from makeAbsDisp import make
 
 
 def overlay(targ, low=-1, high=-1):
@@ -22,12 +21,13 @@ def overlay(targ, low=-1, high=-1):
         targ = str(P(targ).parent)
     fs = [ii for ii in P(targ).iterdir() if ii.name.startswith(
         'absorption') and ii.name.endswith('_exp.txt')]
+        # 'dispersion') and ii.name.endswith('_exp.txt')]
     fig, ax = plt.subplots()
     figtrapz, axtrapz = plt.subplots()
     
-    for i, f in enumerate(fs):
+    for i, f in enumerate(sorted(fs)):
         h, d = read(str(f))
-        d[:, 1] = d[:, 1] - np.average(d[:, 1])
+        d[:, 1] = d[:, 1] - np.average(d[:, 1]) # remove baseline
         if low == -1:
             if 'plotlow' in locals():
                 if d[0, 0] < plotlow:
@@ -73,8 +73,10 @@ def overlay(targ, low=-1, high=-1):
 
 
 def main():
+    make(targ, keyw='%', center=True, rollmid=50)
     overlay(targ)
 
 
 if __name__ == "__main__":
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/7/combined'
     main()

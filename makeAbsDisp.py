@@ -8,6 +8,10 @@ import numpy as np
 from scipy import signal
 
 
+def rolling_average(array, n=3):
+    return [np.sum(array[ii: ii + n]) / n for ii, val in enumerate(array)]
+
+
 def make(targ='./',
          keyw='uM',
          numerical_keyw=True,
@@ -15,6 +19,7 @@ def make(targ='./',
          field=8.57,
          center_sect=10,
          center=True,
+         rollmid=50,
          hyster=0):
     """
     This finds the absorption and dispersion lines from the input 4-line
@@ -27,6 +32,7 @@ def make(targ='./',
     :param field: B0 field value to add to field sweep
     :param center_sect: take the middle 1/nth when n is the argument
     :param center: adjusts for hysteresis to align resonances
+    :param rollmid: len//param for rolling average to find max area of dispersive line
     :param hyster: (mT) adjusts B-field by hyster value if filename includes 'hyster'
     """
 
@@ -35,11 +41,12 @@ def make(targ='./',
 
     files = [
         str(ii) for ii in P(targ).iterdir()
+
         if ii.name.endswith(file_suffix) and not ii.name.startswith(".")
     ]
 
     file_length = {}
-    
+
     for file in files:
         lines = [ii.rstrip('\n') for ii in P(file).read_text().split("\n")]
 
@@ -47,6 +54,7 @@ def make(targ='./',
 
     files_sort = [
         ii[0]
+
         for ii in sorted(file_length.items(), key=lambda x: x[1], reverse=True)
     ]
 
@@ -61,10 +69,9 @@ def make(targ='./',
         if file == files_sort[0]:
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
             longest_data[:, 1] += field
-            middle_B = longest_data[int(
-                np.where(longest_data[:, 2] == np.max(longest_data[:,
-                                                                   2]))[0][0]),
-                                    1]
+            middle_B = longest_data[np.argmax(
+                rolling_average(longest_data[:, 2], len(longest_data[:, 1])//rollmid)), 1]
+            # middle_B = longest_data[np.argmax(longest_data[:, 2]), 1]
 
         curr_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
 
@@ -123,8 +130,9 @@ def make(targ='./',
         curr_data[:, 2] = phased_disp[:]
         curr_data[:, 4] = phased_absorp[:]
 
-        curr_B = curr_data[
-            int(np.where(curr_data[:, 2] == np.max(curr_data[:, 2]))[0][0]), 1]
+        # curr_B = curr_data[np.argmax(curr_data[:, 2]), 1]
+        curr_B = curr_data[np.argmax(
+            rolling_average(curr_data[:, 2], len(curr_data)//rollmid)), 1]
 
         if center:
             diff_B = curr_B - middle_B
@@ -141,33 +149,40 @@ def make(targ='./',
         if numerical_keyw:
             name_keyw = ''.join(
                 ch
+
                 for ch in ''.join([ii for ii in file.split('_') if keyw in ii])
+
                 if ch.isdigit() or ch == 'p' or ch == '.').replace('p', '.')
 
             if name_keyw == '':
                 name_keyw = '0'
         else:
-            name_keyw = "".join([ii for ii in P(file).name.split('_') if keyw in ii]).replace(keyw, "")
-                
+            name_keyw = "".join([ii for ii in P(file).name.split(
+                '_') if keyw in ii]).replace(keyw, "")
+
             if name_keyw == '':
                 name_keyw = f"{keyw}{count}"
                 count += 1
 
         additional = ''
+
         if 'samp' not in keyw:
             if 'sample' in file.lower():
                 samp = ''.join([
                     ch for ch in str(
                         [ii for ii in file.split('_') if 'sample' in ii.lower()])
+
                     if ch.isdigit()
                 ])
                 additional = f'_sample{samp}'
-        
+
         fname = P(file).stem
+
         if 'DA' in fname:
             DA = ''.join([
                 ch for ch in str([
                     fname.split('_')[fname.split('_').index(ii)]
+
                     for ii in fname.split('_') if 'DA' in ii
                 ])
             ]).replace('p', '.')
@@ -176,10 +191,10 @@ def make(targ='./',
         else:
             DAadd = ''
 
-        disp_name = P(targ).joinpath( 'dispersion_' + \
-            name_keyw + keyw + additional + DAadd + '_exp.txt' )
-        abs_name = P(targ).joinpath( 'absorption_' + \
-            name_keyw + keyw + additional + DAadd + '_exp.txt' )
+        disp_name = P(targ).joinpath('dispersion_' +
+                                     name_keyw + keyw + additional + DAadd + '_exp.txt')
+        abs_name = P(targ).joinpath('absorption_' +
+                                    name_keyw + keyw + additional + DAadd + '_exp.txt')
 
         P(disp_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
         P(abs_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
@@ -187,11 +202,12 @@ def make(targ='./',
             np.where(curr_data[:, 4] == np.min(curr_data[:, 4]))[0][0])
         max_idx = int(
             np.where(curr_data[:, 4] == np.max(curr_data[:, 4]))[0][0])
-       
+
         disp_str = ""
         abs_str = ""
+
         for index, row in enumerate(curr_data):
-            if curr_data[index][1] != curr_data[(index+1)%len(curr_data)][1]:
+            if curr_data[index][1] != curr_data[(index + 1) % len(curr_data)][1]:
                 disp_str += f"{row[1] + field}, {row[2]}\n"
                 abs_str += f"{row[1] + field}, {row[4]}\n"
         P(disp_name).write_text(disp_str)
@@ -200,8 +216,7 @@ def make(targ='./',
 
 if __name__ == "__main__":
     make(
-        targ=
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/15/BSA',
+        targ='/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/15/BSA',
         keyw='M',
         file_suffix='rephased.dat',
         numerical_keyw=False,
