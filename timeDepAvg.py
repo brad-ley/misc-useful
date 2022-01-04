@@ -11,11 +11,11 @@ from scipy.signal import savgol_filter
 from readDataFile import read
 
 
-def main():
+def main(filename):
     process(
-        '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/20/0% suc/M13_pulsing.dat',
-        5,
-        205,
+        filename,
+        on=5,
+        off=205,
         window_frac=0,
         order=3,
         bi=False
@@ -145,4 +145,5 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    main()
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen/M10_pulsing.dat'
+    main(f)

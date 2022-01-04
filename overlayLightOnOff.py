@@ -99,5 +99,5 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/20'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen'
     main(targ=targ)

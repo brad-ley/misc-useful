@@ -119,7 +119,7 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
             outx.append(popt[2])
             ### for showing tracking ###
             plt.scatter(popt[2], abs(popt[1]), c='black', alpha=(
-                1 - i / len(dat)), label=f"cycle {i}")
+                1 - i / len(dat)), label=f"cycle {i+1}")
             ### for showing tracking ###
 
             if popt[2] > xmax:
@@ -128,13 +128,13 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
             if popt[1] < xmin:
                 xmin = popt[1]
             x = np.linspace(times[i][abovelas], times[i][-1], 1000)
-            ### for showing fits ###
+            # ### for showing fits ###
             # p = plt.plot(x, exponential(x, *popt))
             # plt.plot(times[i], row, c=p[0].get_color())
             # plt.annotate('Laser\npulse', (on / 2, 0.5),
-                         # color='gray', horizontalalignment='center')
+            #              color='gray', horizontalalignment='center')
             # plt.axvspan(0, on, facecolor='palegreen')
-            ### for showing fits ###
+            # ### for showing fits ###
         
         ### for showing tracking ###
         plt.errorbar(np.mean(outx), np.mean(outy), yerr=np.std(
@@ -153,5 +153,5 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/20/20% ficoll/M03_pulsing - Copy.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen/M10_pulsing.dat'
     main(f)
