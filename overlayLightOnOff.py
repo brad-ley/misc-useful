@@ -26,7 +26,7 @@ def main(targ="./", makeAbs=True):
             file_suffix='rephased.dat',
             numerical_keyw=False,
             field=0,
-            center=False,
+            center=True,
             center_sect=20
         )
     compare(targ=targ, keyword=keyw)
@@ -99,5 +99,5 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/7/compare power'
     main(targ=targ)

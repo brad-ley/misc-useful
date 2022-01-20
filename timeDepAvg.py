@@ -15,7 +15,7 @@ def main(filename):
     process(
         filename,
         on=5,
-        off=205,
+        off=175,
         window_frac=0,
         order=3,
         bi=False
@@ -145,5 +145,5 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen/M10_pulsing.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/7/M06_537_pulsing_40mA.dat'
     main(f)

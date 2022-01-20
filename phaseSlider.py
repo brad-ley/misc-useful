@@ -11,14 +11,14 @@ def plot(fig, x, cpx, xlabel='Field (T)'):
     slide_max = 180   # the maximal value of the paramater a
     a_init = 0   # the value of the parameter a to be used initially, when the graph is created
 
-# first we create the general layount of the figure
-# with two axes objects: one for the plot of the function
-# and the other for the slider
+    # first we create the general layout of the figure
+    # with two axes objects: one for the plot of the function
+    # and the other for the slider
     sin_ax = plt.axes([0.15, 0.2, 0.75, 0.65])
     slider_ax = plt.axes([0.15, 0.05, 0.75, 0.05])
 
 
-# in plot_ax we plot the function with the initial value of the parameter a
+    # in plot_ax we plot the function with the initial value of the parameter a
     plt.axes(sin_ax) # select sin_ax
     plt.title('Averaged and demodulated')
     real, = plt.plot(x, np.real(cpx))
@@ -28,7 +28,7 @@ def plot(fig, x, cpx, xlabel='Field (T)'):
     plt.ylabel('Signal (arb. u)')
     plt.xlabel(xlabel)
 
-# here we create the slider
+    # here we create the slider
     a_slider = Slider(slider_ax,      # the axes object containing the slider
                       r'$\phi$',            # the name of the slider parameter
                       slide_min,          # minimal value of the parameter
