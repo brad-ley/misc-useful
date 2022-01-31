@@ -1,5 +1,6 @@
 import ast
 import os
+import PIL
 from pathlib import Path as P
 from pathlib import PurePath as PP
 
@@ -9,6 +10,9 @@ from scipy.integrate import cumtrapz
 
 from readDataFile import read
 from makeAbsDisp import make
+
+plt.style.use(['science', 'ieee'])
+# plt.style.use('science')
 
 
 def overlay(targ, low=-1, high=-1):
@@ -44,39 +48,55 @@ def overlay(targ, low=-1, high=-1):
                 plothigh = d[-1, 0]
         else:
             plothigh = high
-        
+
+        ### for generic plotting ###
+        # legend = f"{f.name.split('_')[1]}"
+        ############################
+        ### for manuscript plotting ###
+        if "-" in f.name.split('_')[1]:
+            legend = 'DL 537-406'
+        elif "537" in f.name.split('_')[1]:
+            legend = 'SL 537'
+        elif "406" in f.name.split('_')[1]:
+            legend = 'SL 406'
+        else:
+            legend = f"{f.name.split('_')[1]}"
+        ############################
+       
+        lw=1.5
         try:
             scale = np.trapz(cumtrapz(d[np.where(plotlow < d[:, 0])[
                              0][0]:np.where(plothigh < d[:, 0])[0][0], 1]))
-            ax.plot(d[:, 0], d[:, 1] / scale, label=f"{f.name.split('_')[1]}")
-            axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / scale, label=f"{f.name.split('_')[1]}")
+            ax.plot(d[:, 0], d[:, 1] / scale, label=legend, lw=lw)
+            axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / scale, label=legend)
         except (IndexError, UnboundLocalError):
-            ax.plot(d[:, 0], d[:, 1] / np.max(d[:, 1]), label=f"{f.name.split('_')[1]}")
-            axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / np.max(cumtrapz(d[:, 1])), label=f"{f.name.split('_')[1]}")
+            ax.plot(d[:, 0], d[:, 1] / np.max(d[:, 1]), label=legend, lw=lw)
+            axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / np.max(cumtrapz(d[:, 1])), label=legend)
 
     try:
         for a in [ax, axtrapz]:
             a.set_xlim([plotlow, plothigh])
-            a.set_yticks([])
-            a.set_ylabel('Signal (arb. u)')
+            a.set_yticklabels([])
+            a.set_ylabel('Normalized signal (arb. u)')
             a.set_xlabel('Field (T)')
-            a.spines['right'].set_visible(False)
-            a.spines['top'].set_visible(False)
+            # a.spines['right'].set_visible(False)
+            # a.spines['top'].set_visible(False)
             a.legend()
 
         plt.tight_layout()
         fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300)
+        fig.savefig(P(targ).joinpath('figure_comp.tif'), dpi=300)
 
-        plt.show()
+        # plt.show()
     except UnboundLocalError:
         print("Need to create absorption files with makeAbsDisp.py first!")
 
 
 def main():
-    make(targ, keyw='%', center=True, rollmid=50)
+    make(targ, keyw='sweep', field=8.62, numerical_keyw=False)
     overlay(targ)
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/7/combined'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/1/537-406,537,406'
     main()

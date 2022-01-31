@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib.widgets import Slider
 
 from readDataFile import read
+from beamWaist import focus 
 
 WAFER_INDEX = 3.425
 WAVELENGTH = 1.25  # mm
@@ -83,8 +84,9 @@ def fieldSim(w0=[9, 15], zr=100, wafer_radius=-1, plot=True):
     # tB = np.arctan(1 / n) + 0.1 * np.pi / 180
     steps = 10000
     theta = np.linspace(0, 90, steps)
-    ti = np.linspace(tB * 180 / np.pi - 10, tB * 180 /
-                     np.pi + 10, steps) * np.pi / 180
+    angle_spread = 30
+    ti = np.linspace(tB * 180 / np.pi - angle_spread, tB * 180 /
+                     np.pi + angle_spread, steps) * np.pi / 180
 
     def F(n, tB, w0):
         tbidx = np.where(theta > tB * 180 / np.pi)[0][0]
@@ -95,9 +97,9 @@ def fieldSim(w0=[9, 15], zr=100, wafer_radius=-1, plot=True):
                                                                                / 2) * np.exp(-(2 * np.pi / WAVELENGTH * w0 / 2
                                                                                                )**2 * (ti - tB)**2)
 
-        if wafer_radius != -1:
-            dx = zr * (ti - tB)
-            result *= (np.abs(dx) <= wafer_radius)
+        # if wafer_radius != -1:
+        #     dx = zr * (ti - tB)
+        #     result *= (np.abs(dx) <= wafer_radius)
 
         return result
 
@@ -110,8 +112,8 @@ def fieldSim(w0=[9, 15], zr=100, wafer_radius=-1, plot=True):
         plt.figure('Gaussian beam reflectance')
         add = ''
 
-        if wafer_radius != -1:
-            add += '\n' + r'($r_{waf}=$' + f'{wafer_radius} mm, $z_r=${zr} mm)'
+        # if wafer_radius != -1:
+        #     add += '\n' + r'($r_{waf}=$' + f'{wafer_radius} mm, $z_r=${zr} mm)'
 
         w_use = []
 
@@ -119,13 +121,17 @@ def fieldSim(w0=[9, 15], zr=100, wafer_radius=-1, plot=True):
             for i in list(range(0, len(w0), len(w0) // PLOT_NUM)):
                 w_use.append(w0[i])
 
+    if not isinstance(w0, np.ndarray):
+        w0 = np.array(w0).reshape((1,))
+
     for w in w0:
-        data[w] = np.column_stack((ti * 180 / np.pi, F(n, tB, w)))
+        w_focus = focus(w0=w, wavelength=WAVELENGTH, xLens=zr, fLens=zr)
+        data[w] = np.column_stack((ti * 180 / np.pi, F(n, tB, w_focus)))
 
         if plot:
             if w in w_use:
                 plt.plot(data[w][:, 0], data[w][:, 1] **
-                         2, label=f"$w_0=${w:.1f} mm")
+                        2, label=f"$w_i=${w:.1f} mm, $w_f=${w_focus:.1f} mm")
 
     if plot:
         plt.xlabel(r'$\theta_i$')
@@ -168,14 +174,19 @@ def internal_reflections(data, thickness=-1, wafer_radius=-1, zr=100):
         theta_trans = np.arcsin(np.sin(theta) / WAFER_INDEX)
         pT = powerTransmitted(R, thickness, theta_trans)
 
+        waist = focus(w0=key, wavelength=WAVELENGTH, xLens=zr, fLens=zr)
         if wafer_radius != -1:
+            optical_wafer_after_prop = wafer_radius * np.cos(tB) * np.sqrt(1 + (WAVELENGTH * zr / (np.pi * waist))**2 )
+            # this comes from Gaussian beam propagation of radius of silicon wafer
             dx = zr * (theta - tB)
-            pT *= (np.abs(dx) <= wafer_radius)
+            pT *= (np.abs(dx) <= optical_wafer_after_prop)
+
         pR = 1 - pT
-        integ_pR[key] = np.trapz(pT)
+        # integ_pR[key] = np.trapz(pT)
+        integ_pR[key] = np.trapz(pT, x=zr * (theta * np.pi / 180 - tB))
 
         if key in w_use:
-            plt.plot(data[key][:, 0], pT, label=f"$w_0=${key:.1f} mm")
+            plt.plot(data[key][:, 0], pT, label=f"$w_i=${key:.1f} mm, $w_0=${waist:.1f} mm")
 
     add = ''
 
@@ -191,8 +202,9 @@ def internal_reflections(data, thickness=-1, wafer_radius=-1, zr=100):
     plt.figure('Power trans. vs. waist')
 
     ### START OF: want to compute baseline to compare new setup to ###
-    cur = 10  # 10 mm radius coming out of horn
     cur_zr = 125
+    cur_horn = 10 # 10 mm out of horn
+    cur = cur_horn * np.sqrt(1 + (WAVELENGTH * cur_zr / (np.pi * cur_horn))**2 ) # propagate
     d = fieldSim(w0=cur, zr=cur_zr, wafer_radius=-1, plot=False)
     theta = d[cur][:, 0] * np.pi / 180
     r = d[cur][:, 1]
@@ -200,7 +212,7 @@ def internal_reflections(data, thickness=-1, wafer_radius=-1, zr=100):
     theta_trans = np.arcsin(np.sin(theta) / WAFER_INDEX)
     pT = powerTransmitted(R, thickness, theta_trans)
     pR = 1 - pT
-    integ_pR[-1] = np.trapz(pT)
+    integ_pR[-1] = np.trapz(pT, x=zr * (theta * np.pi / 180 - tB))
     ### END OF: want to compute baseline to compare new setup to ###
 
     for key, val in integ_pR.items():
@@ -208,7 +220,7 @@ def internal_reflections(data, thickness=-1, wafer_radius=-1, zr=100):
             c = 'r'
             leg = r'current switch setup ($r_{waf}=\infty$' + \
                 f', $z_r=${cur_zr} mm)'
-            plt.scatter(float(cur), (float(val) - float(integ_pR[-1])) * 100 /
+            plt.scatter(float(cur_horn), (float(val) - float(integ_pR[-1])) * 100 /
                         float(integ_pR[-1]), c=c, label=leg)
         else:
             c = 'k'
@@ -226,15 +238,22 @@ def internal_reflections(data, thickness=-1, wafer_radius=-1, zr=100):
 if __name__ == "__main__":
     # brewster()
     """
-    Stuff to do:
+    stuff to do:
     -properly treat tranmission to incorporate size of the beam
     -the waist upon tranmission is NOT the waist we are interested in controlling
         -need to use Nick's LabVIEW software to figure out the true waist as a function of input radius
         -input radius was CAN control
+        -DONE with beamWaist.py
+    -what happens at silicon to air interface? is this Brewster's angle?
+        -yes, thankfully
+    -pay attention to profile vs. angle plot
+        -while this is correct, the xr *spread* is much different for different
+        beam waists -- they should not be clipped at the sample angle, but the
+        same position. figure out how to represent
     """
-    WAFER_RADIUS = 50
+    WAFER_RADIUS = 20
     PROP_DISTANCE = 100
-    data = fieldSim(w0=np.linspace(5, 25, 41),
+    data = fieldSim(w0=np.linspace(10, 100, 91),
                     zr=PROP_DISTANCE, wafer_radius=WAFER_RADIUS)
     internal_reflections(data, thickness=-1,
                          zr=PROP_DISTANCE, wafer_radius=WAFER_RADIUS)

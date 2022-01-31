@@ -192,9 +192,9 @@ def make(targ='./',
             DAadd = ''
 
         disp_name = P(targ).joinpath('dispersion_' +
-                                     name_keyw + keyw + additional + DAadd + '_exp.txt')
+                                     keyw + name_keyw + additional + DAadd + '_exp.txt')
         abs_name = P(targ).joinpath('absorption_' +
-                                    name_keyw + keyw + additional + DAadd + '_exp.txt')
+                                    keyw + name_keyw + additional + DAadd + '_exp.txt')
 
         P(disp_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
         P(abs_name).write_text(f"Field (T), {name_keyw + keyw} (deriv)\n")
@@ -210,6 +210,8 @@ def make(targ='./',
             if curr_data[index][1] != curr_data[(index + 1) % len(curr_data)][1]:
                 disp_str += f"{row[1] + field}, {row[2]}\n"
                 abs_str += f"{row[1] + field}, {row[4]}\n"
+                # disp_str += f"{row[1]}, {row[2]}\n"
+                # abs_str += f"{row[1]}, {row[4]}\n"
         P(disp_name).write_text(disp_str)
         P(abs_name).write_text(abs_str)
 

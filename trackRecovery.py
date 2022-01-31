@@ -5,17 +5,20 @@ from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
 import numpy as np
+import PIL
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 
 from readDataFile import read
+
+plt.style.use('science')
 
 
 def main(filename):
     process(
         filename,
         5,
-        205,
+        175,
         window_frac=0,
         order=3,
         bi=False
@@ -114,44 +117,61 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
             popt, pcov = curve_fit(
                 exponential, times[i][abovelas:], row[abovelas:], maxfev=10000000, p0=[bl_guess, amp_guess, tau_guess])
-
-            outy.append(abs(popt[1]))
-            outx.append(popt[2])
+            
             ### for showing tracking ###
-            plt.scatter(popt[2], abs(popt[1]), c='black', alpha=(
-                1 - i / len(dat)), label=f"cycle {i+1}")
+            if outx:
+                if not popt[2] > 10*np.mean(outx):
+                    outy.append(abs(popt[1])/y0)
+                    outx.append(popt[2])
+                    plt.scatter(popt[2], abs(popt[1])/y0, c='black', alpha=(
+                        1 - i / len(dat)), )
+
+                    if popt[2] > xmax:
+                        xmax = popt[2]
+
+                    if popt[1] < xmin:
+                        xmin = popt[1]
+            else:
+                y0 = abs(popt[1])
+                outy.append(abs(popt[1])/y0)
+                outx.append(popt[2])
+                plt.scatter(popt[2], abs(popt[1])/y0, c='black', alpha=(
+                    1 - i / len(dat)), label=f"Single run")
+                if popt[2] > xmax:
+                    xmax = popt[2]
+
+                if popt[1] < xmin:
+                    xmin = popt[1]
             ### for showing tracking ###
 
-            if popt[2] > xmax:
-                xmax = popt[2]
-
-            if popt[1] < xmin:
-                xmin = popt[1]
-            x = np.linspace(times[i][abovelas], times[i][-1], 1000)
-            # ### for showing fits ###
+            ### for showing fits ###
+            # x = np.linspace(times[i][abovelas], times[i][-1], 1000)
             # p = plt.plot(x, exponential(x, *popt))
             # plt.plot(times[i], row, c=p[0].get_color())
             # plt.annotate('Laser\npulse', (on / 2, 0.5),
             #              color='gray', horizontalalignment='center')
             # plt.axvspan(0, on, facecolor='palegreen')
-            # ### for showing fits ###
+            ### for showing fits ###
         
         ### for showing tracking ###
         plt.errorbar(np.mean(outx), np.mean(outy), yerr=np.std(
-            outy), xerr=np.std(outx), c='red', label=f"average")
+            outy), xerr=np.std(outx), c='red', label=f"Average")
         plt.legend()
         plt.xlim([xmin / 1.5, xmax * 1.5])
         plt.ylim([np.min(outy)/1.5, np.max(outy)*1.25])
         ### for showing tracking ###
-        plt.title(plot)
+        if plot != "Ch1 mag":
+            plt.title(plot)
         plt.ylabel('Fit amplitude (arb. u)')
         plt.xlabel(r'Fit $\tau$ (s)')
         plt.savefig(P(filename).parent.joinpath(
             f"{plot}_tracking.png"), dpi=300)
-
-    plt.show()
+        plt.savefig(P(filename).parent.joinpath(
+            f"{plot}_tracking.tif"), dpi=300)
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/12/22/no viscogen/M10_pulsing.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/20/7.0 mT/M06_pulsing_rephased.dat'
     main(f)
+    plt.show()
+
