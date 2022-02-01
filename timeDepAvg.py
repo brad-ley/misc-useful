@@ -113,6 +113,11 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
     lw = 1.25
 
     for plot, dat in plots.items():
+        if 'real' in plot:
+            dat = np.real(dat)
+        elif 'imag' in plot:
+            dat = np.imag(dat)
+
         plt.figure(plot)
 
         full = np.mean(dat, axis=0)
@@ -130,27 +135,22 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         popt, pcov = curve_fit(
             exponential, smootht[smootht > on], full[smootht > on], p0=[bl_guess, amp_guess, tau_guess])
         perr = np.sqrt(np.diag(pcov))
-        m = 1
-        # if popt[1] < 0:
-        #     m = -1
-        #     full -= popt[0]
-        #     full *= m
-        #     popt, pcov = curve_fit(
-        #         exponential, smootht[smootht > on], full[smootht > on], p0=[bl_guess, amp_guess, tau_guess])
-        #     perr = np.sqrt(np.diag(pcov))
-        # else:
-        #     m = 1
-        # full /= np.max(full)
+        sd2 = 2*perr[2]
+        if popt[1] < 0:
+            m = -1
+            c = 2*popt[0]
+            full -= c
+            full *= m
+            popt, pcov = curve_fit(
+                exponential, smootht[smootht > on], full[smootht > on], p0=[bl_guess, amp_guess, tau_guess])
+            perr = np.sqrt(np.diag(pcov))
+        else:
+            m = 1
+            c = 0
 
         for i, row in enumerate(dat):
+            row -= c
             row *= m
-            if "real" in plot:
-                row = np.real(row)
-            elif "imag" in plot:
-                row = np.imag(row)
-
-            if np.min(row) < 0:
-                row -= np.min(row)
 
             if i == 0:
                 plt.plot(smootht, row / np.max(full),
@@ -160,8 +160,8 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
                          alpha=0.3, color='lightgray', lw=lw)
 
         plt.plot(smootht, full/np.max(full), label="Average", c='k', lw=lw)
-        plt.plot(smootht[smootht > on], exponential(
-            smootht[smootht > on], *popt)/np.max(full), color="red", linestyle="--", label=r"Fit: $\tau_1$=" + f"{popt[2]:.1f}" + "$\pm$" + f"{perr[2]:.1f}" + r" s$^{-1}$", lw=lw)
+        fit = exponential(smootht[smootht > on], *popt)
+        plt.plot(smootht[smootht > on], fit/np.max(full), color="red", linestyle="--", label=r"Fit ($\tau$=" + f"{popt[2]:.1f}$\pm${sd2:.1f} s)", lw=lw)
 
         
         plt.axvspan(0, on, facecolor='#00A7CA', label='Laser pulse')
@@ -169,13 +169,13 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         handles, labels = plt.gca().get_legend_handles_labels()
 
         # specify order of items in legend
-        order = [3, 1, 2, 0]
+        order = [0, 1, 2, 3]
 
         # add legend to plot
         plt.legend([handles[idx] for idx in order], [labels[idx]
-                                                     for idx in order])
+                                                     for idx in order],
+                                                     loc='upper right')
 
-        # plt.legend(loc='lower right')
         # plt.legend()
         rang = np.max(full) - np.min(full)
         # plt.annotate('Laser\npulse', (on, np.min(full) - rang/6),
@@ -189,6 +189,13 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         # if plot == "Ch2 imag":
         #     plt.title("Time-resolved EPR absoption vs. time")
 
+        # out = dict(name='name here', time=list(smootht), avg=list(full), fit=list(fit), tc=popt[2], te=perr[2])
+        outstr = ''
+        for i, v in enumerate(full):
+            outstr += f"{smootht[i]}, {v}\n"
+
+        P(filename).parent.joinpath(f"output {plot}.txt").write_text(outstr)
+
         plt.ylabel('Signal (arb. u)')
         plt.xlabel('Time (s)')
 
@@ -197,6 +204,6 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/20/6.5 mT/M07_pulsing_rephased.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/27/406/2.89 mT/M07_pulsing_rephased.dat'
     main(f)
     plt.show()
