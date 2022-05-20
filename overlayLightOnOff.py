@@ -1,27 +1,38 @@
 import os
 import sys
-import PIL
 from pathlib import Path as P
 from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
 import numpy as np
+import PIL
 from scipy.integrate import cumtrapz, trapz
 
 from baselineSubtract import subtract
 from makeAbsDisp import make
 from readDataFile import read
 
-plt.style.use('science')
-# plt.rcParams.update({'font.family':'sans-serif'})
+from matplotlib import rc
+plt.style.use(['science'])
 rc('text.latex', preamble=r'\usepackage{cmbright}')
 plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.size'] = 14
+plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['xtick.major.size'] = 5
+plt.rcParams['xtick.major.width'] = 1
+plt.rcParams['xtick.minor.size'] = 2
+plt.rcParams['xtick.minor.width'] = 1
+plt.rcParams['ytick.major.size'] = 5
+plt.rcParams['ytick.major.width'] = 1
+plt.rcParams['ytick.minor.size'] = 2
+plt.rcParams['ytick.minor.width'] = 1
 
 
-def main(targ="./", makeAbs=True, keyw='Light'):
+def main(targ="./", makeAbs=True, keyw='Light', field=0):
     if P(targ).is_file():
         targ = str(P(targ).parent)
+
+    # field = 8.62
 
     if makeAbs:
         make(
@@ -29,16 +40,17 @@ def main(targ="./", makeAbs=True, keyw='Light'):
             keyw=keyw,
             file_suffix='rephased.dat',
             numerical_keyw=False,
-            field=0,
-            center=False,
-            center_sect=1000
+            field=field,
+            center=True,
+            center_sect=10
         )
-    compare(targ=targ, keyword=keyw)
-    # compare(targ=targ, keyword=keyw, normalize=True)
+    compare(targ=targ, keyword=keyw, field=field, B_0=4.7e-3)
+    # compare(targ=targ, keyword=keyw, field=field)
+    # compare(targ=targ, keyword=keyw, normalize=True, field=field)
     # compare(targ=targ, keyword=keyw, integral=True)
 
 
-def compare(targ='./', keyword='Light', normalize=False, integral=False):
+def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False, B_0=-1):
     keyword = keyword.lower()
 
     if P(targ).is_file():
@@ -54,15 +66,19 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
     abs_add = False
 
     fig, ax = plt.subplots()
-   
+
     filelist.sort()
-    for file in filelist:
+    scale = 0
+    lines = {}
+    outlist = []
+
+    for i, f in enumerate(filelist):
         legend = ' '.join([
-            ii.lower() for ii in P(file).stem.split('_') if
+            ii.lower() for ii in P(f).stem.split('_') if
             ('absorption' in ii or 'dispersion' in ii or keyword in ii.lower())
-        ]).replace('light','laser ').replace(keyword, '').replace('absorption', r"$\frac{d\chi''}{dB}$"
-                ).replace('dispersion', r"$\frac{d\chi'}{dB}$")
-        header, data = read(file)
+        ]).replace('light', 'Laser ').replace(keyword, '').replace('absorption', r"$\frac{d\chi''}{dB}$"
+                                                                   ).replace('dispersion', r"$\frac{d\chi'}{dB}$")
+        header, data = read(f)
 
         # legend = legend[:-len('Sweep')]
 
@@ -70,40 +86,79 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
         int_add = ""
 
-        if 'on' in legend:
+        if 'off' in legend:
+            pc = 'black'
+            sty = '-'
+        elif 'on' in legend:
             pc = '#00A7CA'
             sty = '--'
             # sty = '-'
-        elif 'off' in legend:
-            pc = 'black'
-            sty = '-'
 
-        lw = 1.25
+        lw = 2
 
         if integral:
+            d = cumtrapz(trapz(data[:, 1], x=data[:, 0]), x=data[:, 0])
+
             if r"chi''" in legend:
-                ax.plot(data[:-1, 0], cumtrapz(data[:, 1]) /
-                        np.max(cumtrapz(data[:, 1])), label=legend, c=pc, linestyle=sty, lw=lw)
+                legend = " ".join(legend.split(" ")[1:])
+                ax.plot(data[:-1, 0], d / np.max(d),
+                        label=legend, c=pc, linestyle=sty, lw=lw)
                 int_add += "_int"
         else:
             if normalize:
-                data[:, 1] /= np.max(np.abs(data[:, 1]))
-            # data[:, 1] /= np.abs(np.min(data[:, 1]))
-                # data[:, 1] /= np.max(data[:, 1])
+                """
+                For normalizing by double integral
+                """
+                # data[:, 1] -= trapz(data[:,1], x=data[:,0])
+                # d = trapz(cumtrapz(data[:, 1], x=data[:, 0]), x=data[1:, 0])
+                # data[:, 1] /= d
+                """
+                For normalizing to max
+                """
+                data[:, 1] -= trapz(data[:, 1], x=data[:, 0])
+                data[:, 1] /= np.max(data[:, 1])
 
             if r"chi''" in legend:
-                ax.plot(data[:, 0], data[:, 1], label=legend, c=pc, linestyle=sty, lw=lw)
-                spins = trapz(cumtrapz(data[:, 1]))
-                data[:, 1] += 1
+                legend = " ".join(legend.split(" ")[1:])
+                lines[f.stem + ' data'] = [data[:, 0], data[:, 1]]
+                try:
+                    lines[f.stem + ' color'] = pc
+                    lines[f.stem + ' style'] = sty
+                    lines[f.stem + ' name'] = legend
+                except:
+                    pass
+                outlist.append(f.stem)
 
-                print(f'{file.stem} spins {abs(spins):.2e}')
+                if np.max(data[:, 1]) > scale:
+                    scale = np.max(data[:, 1])
+                # ax.plot(data[:, 0], -1 * data[:, 1] / scale,
+                #         label=legend, c=pc, linestyle=sty, lw=lw)
+                spins = trapz(cumtrapz(data[:, 1]))
+
+                print(f'{f.stem} spins {abs(spins):.2e}')
 
             if r"\chi'" in legend:
                 data[:, 1] -= 1
 
                 # ax.plot(data[:, 0], data[:, 1], label=legend)
 
-    ax.legend()
+    for i, f in enumerate(outlist):
+        try:
+            ax.plot(lines[f + ' data'][0], lines[f + ' data'][1] / scale, label=lines[f +
+                                                                                          ' name'], c=lines[f + ' color'], linestyle=lines[f + ' style'], lw=lw)
+        except:
+            ax.plot(lines[f + ' data'][0], lines[f + ' data']
+                    [1] / scale, label="".join([ii.strip('sweep') for ii in f.split("_") if ii != 'absorption' and ii != 'exp']), lw=lw)
+
+    if B_0 != -1:
+        ax.axvline(x=field + B_0, c='gray',
+                   alpha=0.5, lw=lw, label=r'$B_0$')
+    # T406C, E537C are mutations
+    mutant = 'DL Q513A'
+    # mutant = ''
+    ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
+    ax.text(0.05, 0.11, f'$T=294$ K\n{mutant}',
+            horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
     title = 'Light-activated spectral narrowing'
     # title = 'Dipolar broadening at 87 K'
 
@@ -111,8 +166,10 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
         title += ' (normalized to max)'
     # ax.set_title(title)
     ax.set_xlabel('Field (T)')
-    ax.set_ylabel('Signal (arb. u)')
-    ax.set_yticklabels([])
+    ax.set_ylabel('cwEPR signal (arb. u)')
+    ax.set_yticks([-1, 0, 1])
+    # ax.set_yticklabels([])
+    # ax.set_xticks([8.620,8.622, 8.624, 8.626, 8.628])
     # ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     # ax.spines['right'].set_visible(False)
     # ax.spines['top'].set_visible(False)
@@ -121,6 +178,6 @@ def compare(targ='./', keyword='Light', normalize=False, integral=False):
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/1/27/537/stable temp 293.7'
-    main(targ=targ, makeAbs=True, keyw='Light')
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/2/23'
+    main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
     plt.show()

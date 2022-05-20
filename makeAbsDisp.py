@@ -42,7 +42,7 @@ def make(targ='./',
     files = [
         str(ii) for ii in P(targ).iterdir()
 
-        if ii.name.endswith(file_suffix) and not ii.name.startswith(".")
+        if ii.name.endswith(file_suffix) and not ii.name.startswith(".") and not 'pulsing' in ii.name
     ]
 
     file_length = {}
@@ -68,7 +68,7 @@ def make(targ='./',
 
         if file == files_sort[0]:
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
-            longest_data[:, 1] += field
+            # longest_data[:, 1] += field
             middle_B = longest_data[np.argmax(
                 rolling_average(longest_data[:, 2], len(longest_data[:, 1])//rollmid)), 1]
             # middle_B = longest_data[np.argmax(longest_data[:, 2]), 1]
@@ -167,7 +167,7 @@ def make(targ='./',
         additional = ''
 
         if 'samp' not in keyw:
-            if 'sample' in file.lower():
+            if 'sample' in P(file).name.lower():
                 samp = ''.join([
                     ch for ch in str(
                         [ii for ii in file.split('_') if 'sample' in ii.lower()])
@@ -218,10 +218,10 @@ def make(targ='./',
 
 if __name__ == "__main__":
     make(
-        targ='/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/15/BSA',
-        keyw='M',
+        targ='/Volumes/GoogleDrive/My Drive/Research/Code/matlab/Gd(III) Label Modeling Project/Calculations/Rewritten CWdipFit/Brad/data/brad samples/294 K',
+        keyw='sweep',
         file_suffix='rephased.dat',
         numerical_keyw=False,
-        center=False,
-        field=0,
+        center=True,
+        field=8.62,
         hyster=0)

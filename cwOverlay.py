@@ -5,14 +5,26 @@ from pathlib import Path as P
 from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
+from matplotlib import rc
 import numpy as np
 from scipy.integrate import cumtrapz
 
 from readDataFile import read
 from makeAbsDisp import make
 
-plt.style.use(['science', 'ieee'])
-# plt.style.use('science')
+plt.style.use(['science'])
+rc('text.latex', preamble=r'\usepackage{cmbright}')
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.size'] = 14
+plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['xtick.major.size'] = 5
+plt.rcParams['xtick.major.width'] = 1
+plt.rcParams['xtick.minor.size'] = 2
+plt.rcParams['xtick.minor.width'] = 1
+plt.rcParams['ytick.major.size'] = 5
+plt.rcParams['ytick.major.width'] = 1
+plt.rcParams['ytick.minor.size'] = 2
+plt.rcParams['ytick.minor.width'] = 1
 
 
 def overlay(targ, low=-1, high=-1):
@@ -28,8 +40,10 @@ def overlay(targ, low=-1, high=-1):
         # 'dispersion') and ii.name.endswith('_exp.txt')]
     fig, ax = plt.subplots()
     figtrapz, axtrapz = plt.subplots()
-    
-    for i, f in enumerate(sorted(fs)):
+    fs.sort()
+    fs.insert(2, fs.pop(1))
+    for i, f in enumerate(fs):
+        print(f)
         h, d = read(str(f))
         d[:, 1] = d[:, 1] - np.average(d[:, 1]) # remove baseline
         if low == -1:
@@ -53,50 +67,66 @@ def overlay(targ, low=-1, high=-1):
         # legend = f"{f.name.split('_')[1]}"
         ############################
         ### for manuscript plotting ###
-        if "-" in f.name.split('_')[1]:
-            legend = 'DL 537-406'
+        if "DL" in f.name.split('_')[1]:
+            legend = 'DL'
+            color = 'blue'
+            style = ':'
         elif "537" in f.name.split('_')[1]:
-            legend = 'SL 537'
+            legend = 'SL E537C'
+            color ='black'
+            style = '-'
         elif "406" in f.name.split('_')[1]:
-            legend = 'SL 406'
+            legend = 'SL T406C'
+            color ='red'
+            style = '--'
+        # if False:
+        #     pass
         else:
             legend = f"{f.name.split('_')[1]}"
+            # color='black'
         ############################
        
-        lw=1.5
+        lw=2
         try:
             scale = np.trapz(cumtrapz(d[np.where(plotlow < d[:, 0])[
                              0][0]:np.where(plothigh < d[:, 0])[0][0], 1]))
-            ax.plot(d[:, 0], d[:, 1] / scale, label=legend, lw=lw)
+            ax.plot(d[:, 0], d[:, 1] / scale, label=legend, lw=lw, color=color, linestyle=style)
             axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / scale, label=legend)
-        except (IndexError, UnboundLocalError):
+        except IndexError:
+            ax.plot(d[:, 0], d[:, 1] / np.max(d[:, 1]), label=legend, lw=lw, color=color, linestyle=style)
+            axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / np.max(cumtrapz(d[: 1])), label=legend)
+        except (UnboundLocalError, NameError):
             ax.plot(d[:, 0], d[:, 1] / np.max(d[:, 1]), label=legend, lw=lw)
             axtrapz.plot(d[1:, 0], cumtrapz(d[:, 1]) / np.max(cumtrapz(d[:, 1])), label=legend)
+    
 
+    ax.text(0.05, 0.11, '$T=87$ K',
+            horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
     try:
         for a in [ax, axtrapz]:
-            a.set_xlim([plotlow, plothigh])
-            a.set_yticklabels([])
-            a.set_ylabel('Normalized signal (arb. u)')
+            a.set_xlim(right=8.6325)
+            # a.set_yticklabels([])
+            a.set_yticks([-1,0,1])
+            a.set_ylabel('cwEPR signal (arb. u)')
             a.set_xlabel('Field (T)')
             # a.spines['right'].set_visible(False)
             # a.spines['top'].set_visible(False)
-            a.legend()
+            a.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
 
         plt.tight_layout()
         fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300)
         fig.savefig(P(targ).joinpath('figure_comp.tif'), dpi=300)
 
-        # plt.show()
     except UnboundLocalError:
         print("Need to create absorption files with makeAbsDisp.py first!")
 
 
 def main():
-    make(targ, keyw='sweep', field=8.62, numerical_keyw=False)
+    # make(targ, keyw='sweep', field=8.6165, numerical_keyw=False)
     overlay(targ)
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/1/537-406,537,406'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/comparing SLDL'
     main()
+    # plt.show()

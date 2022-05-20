@@ -8,10 +8,13 @@ import numpy as np
 import PIL
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
+from matplotlib import rc
 
 from readDataFile import read
 
-plt.style.use('science')
+plt.style.use(['science', 'ieee'])
+rc('text.latex', preamble=r'\usepackage{cmbright}')
+plt.rcParams['font.family'] = 'sans-serif'
 
 
 def main(filename):
@@ -156,12 +159,10 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         ### for showing tracking ###
         plt.errorbar(np.mean(outx), np.mean(outy), yerr=np.std(
             outy), xerr=np.std(outx), c='red', label=f"Average")
-        plt.legend()
+        plt.legend(frameon=True)
         plt.xlim([xmin / 1.5, xmax * 1.5])
         plt.ylim([np.min(outy)/1.5, np.max(outy)*1.25])
         ### for showing tracking ###
-        if plot != "Ch1 mag":
-            plt.title(plot)
         plt.ylabel('Fit amplitude (arb. u)')
         plt.xlabel(r'Fit $\tau$ (s)')
         plt.savefig(P(filename).parent.joinpath(
