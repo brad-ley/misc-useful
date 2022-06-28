@@ -66,12 +66,12 @@ def main():
     # ax.set_yticks([])
     ax.set_yticklabels([])
     ax.set_ylabel("Energy")
-    ax.set_xlabel("$\omega$")
+    ax.set_xlabel("$B_0$")
     sep = 4
     diff = su - sd
     pos = np.where(su - sd > sep)[0][0]
     ax.set_xticks([0, sweepfield[pos]])
-    ax.set_xticklabels([0, "$\omega_L$"])
+    ax.set_xticklabels([0, r"$B_{res}$"])
     c = 'red'
     head = 0.1
     ax.plot([sweepfield[pos], sweepfield[pos]], [su[pos], sd[pos]], c=c, label='$\hbar \omega$', ls='--')

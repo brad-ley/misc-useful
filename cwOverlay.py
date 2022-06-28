@@ -41,7 +41,8 @@ def overlay(targ, low=-1, high=-1):
     fig, ax = plt.subplots()
     figtrapz, axtrapz = plt.subplots()
     fs.sort()
-    fs.insert(2, fs.pop(1))
+    fs.reverse()
+    # fs.insert(2, fs.pop(1))
     for i, f in enumerate(fs):
         print(f)
         h, d = read(str(f))
@@ -67,23 +68,24 @@ def overlay(targ, low=-1, high=-1):
         # legend = f"{f.name.split('_')[1]}"
         ############################
         ### for manuscript plotting ###
-        if "DL" in f.name.split('_')[1]:
-            legend = 'DL'
-            color = 'blue'
-            style = ':'
-        elif "537" in f.name.split('_')[1]:
-            legend = 'SL E537C'
-            color ='black'
+        if "513" in f.name.split('_')[1]:
+            legend = 'Q513A DL'
+            color = 'green'
             style = '-'
-        elif "406" in f.name.split('_')[1]:
-            legend = 'SL T406C'
+        elif "450" in f.name.split('_')[1]:
+            legend = 'C450A DL'
             color ='red'
+            style = ':'
+        # elif "537" in f.name.split('_')[1]:
+        else:
+            legend = 'DL'
+            color ='black'
             style = '--'
         # if False:
         #     pass
-        else:
-            legend = f"{f.name.split('_')[1]}"
-            # color='black'
+        # else:
+        #     legend = f"{f.name.split('_')[1]}"
+        #     # color='black'
         ############################
        
         lw=2
@@ -127,6 +129,6 @@ def main():
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/comparing SLDL'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/compare DL 513/DL, 513, 450'
     main()
     # plt.show()

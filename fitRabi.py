@@ -26,10 +26,14 @@ def process(filename, subtract_bkg=False, savgol=False):
         'echo': data_array[:, 1],
     }
     
-    x = data_dict['param']
+    b = data_dict['param']
+    x = b[b < 3.5]
     add = ''
 
     dat = data_dict['echo']
+    dat = dat[b < 3.5]
+
+    print(dat.shape, x.shape)
     if savgol:
         dat = savgol_filter(dat, 2*(len(x)//20)+1, 3)
         add += 'savgol_'
@@ -59,7 +63,7 @@ def process(filename, subtract_bkg=False, savgol=False):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2021/11/30/M01_rabi_001.dat'
-    process(f, savgol=True)
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/5/26/M16_Rabi_000.dat'
+    process(f, savgol=False)
     # process(f)
     plt.show()

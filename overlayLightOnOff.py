@@ -44,8 +44,8 @@ def main(targ="./", makeAbs=True, keyw='Light', field=0):
             center=True,
             center_sect=10
         )
-    compare(targ=targ, keyword=keyw, field=field, B_0=4.7e-3)
-    # compare(targ=targ, keyword=keyw, field=field)
+    # compare(targ=targ, keyword=keyw, field=field, B_0=5.18e-3)
+    compare(targ=targ, keyword=keyw, field=field)
     # compare(targ=targ, keyword=keyw, normalize=True, field=field)
     # compare(targ=targ, keyword=keyw, integral=True)
 
@@ -154,7 +154,7 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
         ax.axvline(x=field + B_0, c='gray',
                    alpha=0.5, lw=lw, label=r'$B_0$')
     # T406C, E537C are mutations
-    mutant = 'DL Q513A'
+    mutant = 'DL'
     # mutant = ''
     ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
     ax.text(0.05, 0.11, f'$T=294$ K\n{mutant}',
@@ -178,6 +178,6 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/2/23'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/6/27/Liquid crystal'
     main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
     plt.show()

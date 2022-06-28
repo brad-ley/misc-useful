@@ -124,9 +124,11 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         plt.figure(plot)
 
         full = np.mean(dat, axis=0)
-
-        bl_guess = 1e-5  # starting point of decay
-        amp_guess = 1e-5  # amplitude of exponential decay
+    
+        bl_guess = np.mean(full)
+        # bl_guess = 1e-5  # starting point of decay
+        # amp_guess = 1e-5  # amplitude of exponential decay
+        amp_guess = np.mean(full)
         tau_guess = 50  # time constant guess
 
         # if bi:
@@ -166,6 +168,8 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
         plt.plot(smootht, full/np.max(full), label="Average", c='k', lw=lw)
         fit = exponential(smootht[smootht > on], *popt)
+        if np.isnan(sd2) or sd2 == np.inf:
+            sd2 = 0 
         plt.plot(smootht[smootht > on], fit/np.max(full), color="red", linestyle="--", label=fr"$\tau={popt[2]:.1f}\pm{sd2:.1f}$ s", lw=lw)
 
         
@@ -209,6 +213,6 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/26/try 2/M14_pulsing_rephased.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/6/27/Liquid crystal/M07_pulsing_rephased.dat'
     main(f)
     plt.show()

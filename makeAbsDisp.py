@@ -218,7 +218,7 @@ def make(targ='./',
 
 if __name__ == "__main__":
     make(
-        targ='/Volumes/GoogleDrive/My Drive/Research/Code/matlab/Gd(III) Label Modeling Project/Calculations/Rewritten CWdipFit/Brad/data/brad samples/294 K',
+        targ='/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/compare DL 513/DL, 513, 450',
         keyw='sweep',
         file_suffix='rephased.dat',
         numerical_keyw=False,
