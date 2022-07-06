@@ -77,15 +77,16 @@ def overlay(targ, low=-1, high=-1):
             color ='red'
             style = ':'
         # elif "537" in f.name.split('_')[1]:
-        else:
-            legend = 'DL'
-            color ='black'
-            style = '--'
+        # else:
+        #     legend = 'DL'
+        #     color ='black'
+        #     style = '--'
         # if False:
         #     pass
-        # else:
-        #     legend = f"{f.name.split('_')[1]}"
-        #     # color='black'
+        else:
+            legend = f"{f.name.split('_')[1]}"
+            color='black'
+            style = '-'
         ############################
        
         lw=2
@@ -106,14 +107,14 @@ def overlay(targ, low=-1, high=-1):
             horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
     try:
         for a in [ax, axtrapz]:
-            a.set_xlim(right=8.6325)
+            # a.set_xlim(right=8.6325)
             # a.set_yticklabels([])
             a.set_yticks([-1,0,1])
             a.set_ylabel('cwEPR signal (arb. u)')
             a.set_xlabel('Field (T)')
             # a.spines['right'].set_visible(False)
             # a.spines['top'].set_visible(False)
-            a.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
+            # a.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
 
         plt.tight_layout()
         fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300)
@@ -124,11 +125,11 @@ def overlay(targ, low=-1, high=-1):
 
 
 def main():
-    # make(targ, keyw='sweep', field=8.6165, numerical_keyw=False)
+    make(targ, keyw='sweep', field=8.62, numerical_keyw=False)
     overlay(targ)
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/compare DL 513/DL, 513, 450'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/6/24/Gd-DOTA in water cw/M02_dsweep_checkSample_rephased_rephased.dat'
     main()
     # plt.show()

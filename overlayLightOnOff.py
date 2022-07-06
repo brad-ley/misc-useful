@@ -178,6 +178,6 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/6/27/Liquid crystal'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/7/Liquid crys'
     main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
     plt.show()
