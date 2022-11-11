@@ -153,7 +153,7 @@ def main():
     RStimes = np.linspace(np.min(time), 6, int(10 * f * np.max(time))) * 1e-6
     t, rapid, w = Bloch(1e-6, 300e-9, 0, f, 25, t=RStimes)
     a3.plot(RStimes * 1e6, w / np.max(w) *
-            np.max(rapid.y[0]), label='Field', c='k', alpha=0.5, ls='--')
+            np.max(rapid.y[0]), label='$B_{mod}$', c='k', alpha=0.5, ls='--')
     a3.plot(RStimes * 1e6, rapid.y[0], label='$M_x$')
     a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
     a3.set_ylabel('Signal')
