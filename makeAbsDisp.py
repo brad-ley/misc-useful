@@ -218,10 +218,10 @@ def make(targ='./',
 
 if __name__ == "__main__":
     make(
-        targ='/Volumes/GoogleDrive/My Drive/Research/Data/2022/4/compare DL 513/DL, 513, 450',
-        keyw='sweep',
+        targ='/Volumes/GoogleDrive/My Drive/Research/Data/2022/8/23/TEMPO conc calib',
+        keyw='mA',
         file_suffix='rephased.dat',
         numerical_keyw=False,
         center=True,
-        field=8.62,
+        field=8.577,
         hyster=0)

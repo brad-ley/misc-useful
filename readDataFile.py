@@ -1,6 +1,7 @@
 from pathlib import Path as P
 
 import numpy as np
+import pandas as pd
 
 
 def isNumber(num):
@@ -47,7 +48,11 @@ def read(filename, delimiter=',', flipX=True):
 
     idx_list = []
     datatypes = []
-    data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
+    try:
+        data = np.loadtxt(filename, delimiter=delimiter, skiprows=skiprows)
+    except ValueError:
+        dat = pd.read_csv(filename, delimiter=delimiter, skiprows=skiprows, skipfooter=1, engine='python')
+        data = dat.to_numpy()
 
     for line in header.split('\n')[::-1]:
         if line != '':

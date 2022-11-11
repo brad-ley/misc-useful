@@ -24,13 +24,15 @@ def calibrate(targ='./', keyw="uM", numerical_keyw=True):
 
     if not targ.endswith('/'):
         targ += '/'
+    # choice = 'absorption'
+    choice = 'dispersion'
 
     if numerical_keyw:
         filelist = sorted(
             [
                 targ + ii for ii in os.listdir(targ)
 
-                if ii.startswith('dispersion') and ii.endswith('.txt')
+                if ii.startswith(choice) and ii.endswith('.txt')
             ],
             key=lambda f: float(''.join(ch for ch in str(
                 [ii for ii in f.split('/')[-1].split('_') if keyw in ii][0])
@@ -39,7 +41,7 @@ def calibrate(targ='./', keyw="uM", numerical_keyw=True):
             reverse=True)
     else:
         filelist = [targ + ii for ii in os.listdir(targ)
-                    if ii.startswith('dispersion') and ii.endswith('.txt')]
+                    if ii.startswith(choice) and ii.endswith('.txt')]
 
     base_DA = -1
 
@@ -92,6 +94,7 @@ def calibrate(targ='./', keyw="uM", numerical_keyw=True):
         dat = np.loadtxt(file, skiprows=1, delimiter=',')
         dispersive = dat[:, 1] * scaling
         absorptive = -1 * np.imag(signal.hilbert(dispersive))
+        # absorptive = dat[:, 1] * scaling
         absorption = integrate.cumtrapz(absorptive)
         absorp_err = np.sqrt(len(absorption)) * \
             np.std(absorption[-len(absorption) // 10:])
@@ -160,7 +163,7 @@ def func(x, m):
 
 
 if __name__ == "__main__":
-    targ = '/Users/Brad/Library/Containers/com.eltima.cloudmounter.mas/Data/.CMVolumes/Brad Price/Research/Data/2021/06/22/'
+    targ = ''
     numerical_keyw = False
     keyw = 'uM'
     make(

@@ -41,11 +41,11 @@ def main(targ="./", makeAbs=True, keyw='Light', field=0):
             file_suffix='rephased.dat',
             numerical_keyw=False,
             field=field,
-            center=True,
+            center=False,
             center_sect=10
         )
-    # compare(targ=targ, keyword=keyw, field=field, B_0=5.18e-3)
-    compare(targ=targ, keyword=keyw, field=field)
+    compare(targ=targ, keyword=keyw, field=field, B_0=-1)
+    # compare(targ=targ, keyword=keyw, field=field)
     # compare(targ=targ, keyword=keyw, normalize=True, field=field)
     # compare(targ=targ, keyword=keyw, integral=True)
 
@@ -65,7 +65,7 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
     disp_add = False
     abs_add = False
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8,6))
 
     filelist.sort()
     scale = 0
@@ -103,6 +103,8 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
                 legend = " ".join(legend.split(" ")[1:])
                 ax.plot(data[:-1, 0], d / np.max(d),
                         label=legend, c=pc, linestyle=sty, lw=lw)
+                # ax.plot(data[:-1, 0], d / np.max(d),
+                #         c=pc, linestyle=sty, lw=lw)
                 int_add += "_int"
         else:
             if normalize:
@@ -131,6 +133,8 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
                 if np.max(data[:, 1]) > scale:
                     scale = np.max(data[:, 1])
+                    # scale = 0.0001604264455812626
+
                 # ax.plot(data[:, 0], -1 * data[:, 1] / scale,
                 #         label=legend, c=pc, linestyle=sty, lw=lw)
                 spins = trapz(cumtrapz(data[:, 1]))
@@ -154,10 +158,11 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
         ax.axvline(x=field + B_0, c='gray',
                    alpha=0.5, lw=lw, label=r'$B_0$')
     # T406C, E537C are mutations
-    mutant = 'DL'
+    mutant = '\n'
     # mutant = ''
-    ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2)
-    ax.text(0.05, 0.11, f'$T=294$ K\n{mutant}',
+    # ax.legend(loc=(.55,.8),markerfirst=True,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
+    ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
+    ax.text(0.05, 0.11, f'$T=294$ K{mutant}',
             horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
     title = 'Light-activated spectral narrowing'
     # title = 'Dipolar broadening at 87 K'
@@ -168,16 +173,17 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
     ax.set_xlabel('Field (T)')
     ax.set_ylabel('cwEPR signal (arb. u)')
     ax.set_yticks([-1, 0, 1])
+    ax.set_ylim([-1.1, 1.1])
     # ax.set_yticklabels([])
     # ax.set_xticks([8.620,8.622, 8.624, 8.626, 8.628])
     # ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     # ax.spines['right'].set_visible(False)
     # ax.spines['top'].set_visible(False)
-    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), dpi=200)
-    fig.savefig(P(targ).joinpath('compared' + int_add + '.tif'), dpi=200)
+    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), transparent=False, dpi=300)
+    fig.savefig(P(targ).joinpath('compared' + int_add + '.tif'), dpi=300)
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/7/Liquid crys'
+    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/10/27/M04_usweep_LightOff_rephased.dat'
     main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
     plt.show()

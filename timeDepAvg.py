@@ -4,25 +4,35 @@ from pathlib import Path as P
 from pathlib import PurePath as PP
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
 import numpy as np
 import PIL
+from matplotlib import rc
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 
 from readDataFile import read
 
-plt.style.use('science')
+plt.style.use(['science'])
 rc('text.latex', preamble=r'\usepackage{cmbright}')
 plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.size'] = 14
+plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['xtick.major.size'] = 5
+plt.rcParams['xtick.major.width'] = 1
+plt.rcParams['xtick.minor.size'] = 2
+plt.rcParams['xtick.minor.width'] = 1
+plt.rcParams['ytick.major.size'] = 5
+plt.rcParams['ytick.major.width'] = 1
+plt.rcParams['ytick.minor.size'] = 2
+plt.rcParams['ytick.minor.width'] = 1
 
 
 def main(filename):
     process(
         filename,
-        on=5,
-        off=175,
+        on=10,
+        off=230,
         window_frac=0,
         order=2,
         bi=False
@@ -124,7 +134,7 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         plt.figure(plot)
 
         full = np.mean(dat, axis=0)
-    
+
         bl_guess = np.mean(full)
         # bl_guess = 1e-5  # starting point of decay
         # amp_guess = 1e-5  # amplitude of exponential decay
@@ -140,12 +150,14 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         popt, pcov = curve_fit(
             exponential, smootht[smootht > on], full[smootht > on], p0=[bl_guess, amp_guess, tau_guess])
         perr = np.sqrt(np.diag(pcov))
-        sd2 = 2*perr[2]
+        sd2 = 2 * perr[2]
+
         if sd2 == np.inf:
             sd2 = 0
+
         if popt[1] < 0:
             m = -1
-            c = 2*popt[0]
+            c = 2 * popt[0]
             full -= c
             full *= m
             popt, pcov = curve_fit(
@@ -158,7 +170,7 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         for i, row in enumerate(dat):
             row -= c
             row *= m
-
+            
             if i == 0:
                 plt.plot(smootht, row / np.max(full),
                          alpha=0.3, color='lightgray', label="Single scans", lw=lw)
@@ -166,13 +178,14 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
                 plt.plot(smootht, row / np.max(full),
                          alpha=0.3, color='lightgray', lw=lw)
 
-        plt.plot(smootht, full/np.max(full), label="Average", c='k', lw=lw)
+        plt.plot(smootht, full / np.max(full), label="Average", c='k', lw=lw)
         fit = exponential(smootht[smootht > on], *popt)
-        if np.isnan(sd2) or sd2 == np.inf:
-            sd2 = 0 
-        plt.plot(smootht[smootht > on], fit/np.max(full), color="red", linestyle="--", label=fr"$\tau={popt[2]:.1f}\pm{sd2:.1f}$ s", lw=lw)
 
-        
+        if np.isnan(sd2) or sd2 == np.inf:
+            sd2 = 0
+        plt.plot(smootht[smootht > on], fit / np.max(full), color="red",
+                 linestyle="--", label=fr"$\tau={popt[2]:.1f}\pm{sd2:.1f}$ s", lw=lw)
+
         plt.axvspan(0, on, facecolor='#00A7CA', label='Laser on')
 
         handles, labels = plt.gca().get_legend_handles_labels()
@@ -183,7 +196,9 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
         # add legend to plot
         plt.legend([handles[idx] for idx in order], [labels[idx]
                                                      for idx in order],
-                                                     loc='upper right')
+                   loc='upper right',
+                   markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2
+                   )
 
         # plt.legend()
         rang = np.max(full) - np.min(full)
@@ -200,6 +215,7 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
         # out = dict(name='name here', time=list(smootht), avg=list(full), fit=list(fit), tc=popt[2], te=perr[2])
         outstr = ''
+
         for i, v in enumerate(full):
             outstr += f"{smootht[i]}, {v}\n"
 
@@ -213,6 +229,6 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/6/27/Liquid crystal/M07_pulsing_rephased.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/10/17/cw/center of coil/M10_pulsing_rephased.dat'
     main(f)
     plt.show()
