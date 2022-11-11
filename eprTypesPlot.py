@@ -76,7 +76,7 @@ def main():
         else:
             sd[i] += np.dot(retd, normalize(down))
     fig, ax = plt.subplots(ncols=1, nrows=4, figsize=(
-        8, 6), gridspec_kw={'height_ratios': [2, 1, 1, 1], 'hspace': 0.25})
+        8, 6), gridspec_kw={'height_ratios': [2, 1, 1, 1], 'hspace': 0.3})
     a0 = ax[0]
     a1 = ax[1]
     a2 = ax[2]
@@ -113,6 +113,7 @@ def main():
     a0.set_xticks([0, sweepfield[pos]])
     a1.set_xticks([0, sweepfield[pos]])
     a1.set_xticklabels([0, r"$B_{res}$"])
+    a0.set_xticklabels([0, r"$B_{res}$"])
     c = 'k'
     head = 0.1
     a0.plot([sweepfield[pos], sweepfield[pos]], [su[pos], sd[pos]],
@@ -131,7 +132,7 @@ def main():
     time = np.linspace(0, 6, 1000)
     pulses = np.logical_and(time >= 1, time < 1.5)
     pulses += np.logical_and(time >= 2.5, time < 3.5)
-    signal = np.exp(-(time - 4.75)**2 / (2 * gamma / 6 ** 2))
+    signal = 0.8*np.exp(-(time - 4.75)**2 / (2 * gamma / 6 ** 2))
     fidpts = np.where(np.diff(pulses.astype(float)) < 0)[0]
     signal += (time > time[fidpts[0]]) * np.exp(-(time - time[fidpts[0]])/0.05)
     signal += (time > time[fidpts[1]]) * np.exp(-(time - time[fidpts[1]])/0.05)
@@ -144,7 +145,7 @@ def main():
     # a2.set_xlabel(r'Time ($\mu$s)')
     a2.set_ylabel(r'Signal')
     a2.set_xlim(right=7)
-    a2.set_xticklabels([])
+    # a2.set_xticklabels([])
     ### pulsed EPR ###
 
     ### rapidscan EPR ###
