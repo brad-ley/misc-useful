@@ -53,6 +53,8 @@ def read(filename, delimiter=',', flipX=True):
     except ValueError:
         dat = pd.read_csv(filename, delimiter=delimiter, skiprows=skiprows, skipfooter=1, engine='python')
         data = dat.to_numpy()
+    except UnboundLocalError:
+        raise Exception('Incorrect delimiter.')
 
     for line in header.split('\n')[::-1]:
         if line != '':
