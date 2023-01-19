@@ -31,8 +31,8 @@ plt.rcParams['ytick.minor.width'] = 1
 def main(filename):
     process(
         filename,
-        on=10,
-        off=230,
+        on=5,
+        off=175,
         window_frac=0,
         order=2,
         bi=False
@@ -229,6 +229,6 @@ def process(filename, on, off, window_frac=10, order=2, bi=True):
 
 
 if __name__ == "__main__":
-    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/10/17/cw/center of coil/M10_pulsing_rephased.dat'
+    f = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/12/16/spytag for Shiny/STSC/M07_pulsing_rephased.dat'
     main(f)
     plt.show()
