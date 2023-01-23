@@ -104,4 +104,4 @@ if __name__ == "__main__":
     background = 2
     title = 'On switch, final wafer and source angle, comparison sensor angle (bc)'
     main(folder, signal, background, title=title)
-    # plt.show()
+    plt.show()
