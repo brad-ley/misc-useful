@@ -11,12 +11,12 @@ from matplotlib import rc
 
 from readDataFile import read
 
-sys.path.append('/Users/Brad/Documents/Research/code/python/tigger')
+sys.path.append('/Users/Brad/Documents/Research/code/python/rapidscan/')
 from simulateRapidscan import Bloch
 
 plt.style.use(['science'])
-rc('text.latex', preamble=r'\usepackage{cmbright}')
-plt.rcParams['font.family'] = 'sans-serif'
+# rc('text.latex', preamble=r'\usepackage{cmbright}')
+# plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.size'] = 14
 plt.rcParams['axes.linewidth'] = 1
 plt.rcParams['xtick.major.size'] = 5
@@ -75,12 +75,12 @@ def main():
             sd[i] = 0
         else:
             sd[i] += np.dot(retd, normalize(down))
-    fig, ax = plt.subplots(ncols=1, nrows=4, figsize=(
-        8, 6), gridspec_kw={'height_ratios': [2, 1, 1, 1], 'hspace': 0.3})
-    a0 = ax[0]
-    a1 = ax[1]
-    a2 = ax[2]
-    a3 = ax[3]
+    fig, ax = plt.subplots(ncols=1, nrows=3, figsize=(
+        6, 4), gridspec_kw={'height_ratios': [1, 1, 1], 'hspace': 0.3})
+    # a0 = ax[0]
+    a1 = ax[0]
+    a2 = ax[1]
+    a3 = ax[2]
 
     # a0.sharex(a1)
     # a2.sharex(a3)
@@ -89,8 +89,8 @@ def main():
 
     for a in ax:
         a.set_yticklabels([])
-    a0.set_ylabel("Energy")
-    a0.set_xticklabels([])
+    # a0.set_ylabel("Energy")
+    # a0.set_xticklabels([])
     a1.set_ylabel("Signal")
     # a0.set_xlabel("$B_0$")
     sep = 4
@@ -106,26 +106,28 @@ def main():
     a1.plot(sweepfield, absorption / np.max(absorption), label=r"$\chi''$")
     a1.plot(sweepfield[:-1], np.diff(absorption) /
             np.max(np.diff(absorption) * 2), label=r"$\frac{d\chi''}{dB}$")
-    a1.plot(stime, sin, c='k', alpha=0.5)
-    a1.annotate('$\Delta I_{mod}$', (1.95, 0.5), alpha=0.5)
-    a1.plot(2.5 + sin, stime - np.min(stime) - 0.25, c='k')
-    a1.annotate('$\Delta B_{mod}$', (1.85, -0.4))
-    a0.set_xticks([0, sweepfield[pos]])
+    a1.plot(stime - 0.25, sin + 0.25, c='k', alpha=0.5)
+    a1.annotate('$\Delta I_{mod}$', (1.45, 0.75), alpha=0.5)
+    a1.plot(2.25 + sin, stime - np.min(stime), c='k')
+    a1.annotate('$\Delta B_{mod}$', (1.35, 0.225))
+    a1.text(0.05, 0.7, 'a)', transform=a1.transAxes)
     a1.set_xticks([0, sweepfield[pos]])
     a1.set_xticklabels([0, r"$B_{res}$"])
-    a0.set_xticklabels([0, r"$B_{res}$"])
+    a1.set_xlim()
+    a1.set_ylim(top=1.5)
+    # a0.set_xticks([0, sweepfield[pos]])
+    # a0.set_xticklabels([0, r"$B_{res}$"])
     c = 'k'
     head = 0.1
-    a0.plot([sweepfield[pos], sweepfield[pos]], [su[pos], sd[pos]],
-            c=c, label='$\hbar \omega$', ls='--')
-    a0.arrow(sweepfield[pos], sd[pos] + head, 0, -head / 30, shape='full',
-             length_includes_head=True, head_width=0.1, ec=c, fc=c)
-    a0.arrow(sweepfield[pos], su[pos] - head, 0, head / 30, shape='full',
-             length_includes_head=True, head_width=0.1, ec=c, fc=c)
-    a0.plot(sweepfield, su, label=r'$m_s=+\frac12$',)
-    a0.plot(sweepfield, sd, label=r'$m_s=-\frac12$',)
-    a0.set_xlim(right=10.5)
-    a1.set_xlim(right=10.5)
+    # a0.plot([sweepfield[pos], sweepfield[pos]], [su[pos], sd[pos]],
+            # c=c, label='$\hbar \omega$', ls='--')
+    # a0.arrow(sweepfield[pos], sd[pos] + head, 0, -head / 30, shape='full',
+            #  length_includes_head=True, head_width=0.1, ec=c, fc=c)
+    # a0.arrow(sweepfield[pos], su[pos] - head, 0, head / 30, shape='full',
+            #  length_includes_head=True, head_width=0.1, ec=c, fc=c)
+    # a0.plot(sweepfield, su, label=r'$m_s=+\frac12$',)
+    # a0.plot(sweepfield, sd, label=r'$m_s=-\frac12$',)
+    # a0.set_xlim(right=10.5)
     ### cw EPR ###
 
     ### pulsed EPR ###
@@ -136,15 +138,15 @@ def main():
     fidpts = np.where(np.diff(pulses.astype(float)) < 0)[0]
     signal += (time > time[fidpts[0]]) * np.exp(-(time - time[fidpts[0]])/0.05)
     signal += (time > time[fidpts[1]]) * np.exp(-(time - time[fidpts[1]])/0.05)
-    a2.plot(time, pulses, label='Pulses', zorder=2)
-    a2.plot(time, signal, label='Signal', zorder=1)
-    a2.fill_between(time, pulses, zorder=3)
-    a2.fill_between(time, signal, zorder=3)
+    a2.plot(time, pulses, zorder=2)
+    a2.plot(time, signal, zorder=1)
+    a2.fill_between(time, pulses, label='Pulses', zorder=3)
+    a2.fill_between(time, signal, label='Signal', zorder=3)
     a2.plot(time, [0] * len(time), c='k', zorder=3)
-    a2.set_ylim([-0.25, 1.25])
+    a2.set_ylim(top=2)
     # a2.set_xlabel(r'Time ($\mu$s)')
     a2.set_ylabel(r'Signal')
-    a2.set_xlim(right=7)
+    a2.text(0.05, 0.7, 'b)', transform=a2.transAxes)
     # a2.set_xticklabels([])
     ### pulsed EPR ###
 
@@ -158,22 +160,23 @@ def main():
     a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
     a3.set_ylabel('Signal')
     a3.set_xlabel('Times ($\mu$s)')
-    a3.set_xlim(right=7)
+    a3.set_ylim(top=.5)
+    a3.text(0.05, 0.7, 'c)', transform=a3.transAxes)
     ### rapidscan EPR ###
 
     # reordering the labels
-    handles, labels = a0.get_legend_handles_labels()
-    order = [1, 2, 0]
-    a0.legend([handles[i] for i in order], [labels[i] for i in order],
-              loc='center right', markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2,)
+    # handles, labels = a0.get_legend_handles_labels()
+    # order = [1, 2, 0]
+    # a0.legend([handles[i] for i in order], [labels[i] for i in order],
+    #           loc='center right', markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2,)
     a1.legend(
-        loc='center right', markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2
+        loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
     a2.legend(
-        loc='center right', markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2
+        loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
     a3.legend(
-        loc='center right', markerfirst=False, handlelength=1, handletextpad=0.4, labelspacing=0.2
+        loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
     plt.savefig('/Volumes/GoogleDrive/Shared drives/UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
 
