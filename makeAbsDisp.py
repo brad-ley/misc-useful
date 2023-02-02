@@ -92,11 +92,12 @@ def make(targ='./',
                 np.hstack((dat[:len(dat) // 4], dat[3 * len(dat) // 4:])))
 
             curr_data[:, ll] = np.copy(dat)
+
         sorted_average = [
             ii[1] for ii in sorted(
                 middle_averages.items(), key=lambda x: x[1], reverse=True)
         ]
-
+    
         for key in middle_averages:
             if middle_averages[key] == sorted_average[0]:
                 disp_idx = key
