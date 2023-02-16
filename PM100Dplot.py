@@ -51,6 +51,7 @@ def extractAvgs(filename):
     steps = np.where(np.diff(y) > 0.25 * np.mean(y[:20]))
     start = steps[0][0]
     tenSpoints = np.argmin(np.abs(x - 10.3))
+    spanpoints = np.argmin(np.abs(x - 8)) 
     tenS = x[tenSpoints]
     avgs = [0] * (int(np.max(x) / tenS))
     currents = np.linspace(135, 135 + (len(avgs) - 1) * 5, len(avgs))
@@ -62,7 +63,7 @@ def extractAvgs(filename):
             avgs[i] = np.mean(y[start + tenSpoints * (i - 1):])
         else:
             avgs[i] = np.mean(
-                y[start + tenSpoints * (i - 1):start + tenSpoints * i])
+                y[start + tenSpoints * (i - 1) + spanpoints//2:start + tenSpoints * (i - 1) + spanpoints])
         ax.axvline(x[start + tenSpoints * (i - 1)], c='k', ls='--', alpha=0.2)
         outstr += f'{int(currents[i]):>10}|{avgs[i]:>10.3f}\n'
     ax.plot(x, y)
@@ -107,9 +108,9 @@ def rescale(direct, slide):
 if __name__ == "__main__":
     filename = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/2/Viron laser power/DATA05.CSV'
     # main(filename)
-    # files = [ii for ii in P(filename).parent.iterdir() if ii.name.endswith('.CSV')]
-    # for f in files:
-    #     extractAvgs(f)
+    files = [ii for ii in P(filename).parent.iterdir() if ii.name.endswith('.CSV')]
+    for f in files:
+        extractAvgs(f)
     rescale('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/2/Viron laser power/DATA04_processed.txt',
             '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/2/Viron laser power/DATA05_processed.txt')
     # plt.show()

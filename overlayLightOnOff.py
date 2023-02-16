@@ -8,7 +8,7 @@ import numpy as np
 import PIL
 from scipy.integrate import cumtrapz, trapz
 
-from baselineSubtract import subtract
+# from baselineSubtract import subtract
 from makeAbsDisp import make
 from readDataFile import read
 
@@ -44,10 +44,8 @@ def main(targ="./", makeAbs=True, keyw='Light', field=0):
             center=False,
             center_sect=10
         )
-    compare(targ=targ, keyword=keyw, field=field, B_0=-1)
-    # compare(targ=targ, keyword=keyw, field=field)
-    # compare(targ=targ, keyword=keyw, normalize=True, field=field)
-    # compare(targ=targ, keyword=keyw, integral=True)
+    # compare(targ=targ, keyword=keyw, field=field, B_0=-1)
+    compare(targ=targ, keyword=keyw, field=field, B_0=-1, normalize=False,)
 
 
 def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False, B_0=-1):
@@ -61,17 +59,19 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
         if (ii.name.startswith('dispersion') or ii.name.startswith('absorption')) and ii.name.endswith('_exp.txt')
     ]
+    filelist.sort()
+    # filelist.reverse()
 
     disp_add = False
     abs_add = False
 
-    fig, ax = plt.subplots(figsize=(8,6))
+    # fig, ax = plt.subplots(figsize=(8,6))
+    fig, ax = plt.subplots()
 
-    filelist.sort()
     scale = 0
     lines = {}
     outlist = []
-
+    
     for i, f in enumerate(filelist):
         legend = ' '.join([
             ii.lower() for ii in P(f).stem.split('_') if
@@ -97,12 +97,26 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
         lw = 2
 
         if integral:
-            d = cumtrapz(trapz(data[:, 1], x=data[:, 0]), x=data[:, 0])
+            d = cumtrapz(data[:, 1], x=data[:, 0])
 
             if r"chi''" in legend:
+
                 legend = " ".join(legend.split(" ")[1:])
-                ax.plot(data[:-1, 0], d / np.max(d),
-                        label=legend, c=pc, linestyle=sty, lw=lw)
+                lines[f.stem + ' data'] = [data[:-1, 0], d]
+                try:
+                    lines[f.stem + ' color'] = pc
+                    lines[f.stem + ' style'] = sty
+                    lines[f.stem + ' name'] = legend
+                except:
+                    pass
+                outlist.append(f.stem)
+
+                if np.max(d) > scale:
+                    scale = np.max(d)
+
+                # legend = " ".join(legend.split(" ")[1:])
+                # ax.plot(data[:-1, 0], d,
+                #         label=legend, c=pc, linestyle=sty, lw=lw)
                 # ax.plot(data[:-1, 0], d / np.max(d),
                 #         c=pc, linestyle=sty, lw=lw)
                 int_add += "_int"
@@ -146,6 +160,7 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
                 # ax.plot(data[:, 0], data[:, 1], label=legend)
 
+    outlist.reverse()
     for i, f in enumerate(outlist):
         try:
             ax.plot(lines[f + ' data'][0], lines[f + ' data'][1] / scale, label=lines[f +
@@ -158,11 +173,11 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
         ax.axvline(x=field + B_0, c='gray',
                    alpha=0.5, lw=lw, label=r'$B_0$')
     # T406C, E537C are mutations
-    mutant = '\n'
-    # mutant = ''
+    T = 294
+    mutant = 'DL T406C-E537C'
     # ax.legend(loc=(.55,.8),markerfirst=True,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
     ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
-    ax.text(0.05, 0.11, f'$T=294$ K{mutant}',
+    ax.text(0.05, 0.11, f'$T={T}$ K\n{mutant}',
             horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
     title = 'Light-activated spectral narrowing'
     # title = 'Dipolar broadening at 87 K'
@@ -179,11 +194,12 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
     # ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     # ax.spines['right'].set_visible(False)
     # ax.spines['top'].set_visible(False)
-    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), transparent=False, dpi=300)
-    fig.savefig(P(targ).joinpath('compared' + int_add + '.tif'), dpi=300)
+    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), transparent=True, dpi=500)
+    # fig.savefig(P(targ).joinpath('compared' + int_add + '.tif'), dpi=300)
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/10/27/M04_usweep_LightOff_rephased.dat'
+    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2022/1/20'
     main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
+    # main(targ=targ, makeAbs=True, keyw='sweep', field=8.62)
     plt.show()

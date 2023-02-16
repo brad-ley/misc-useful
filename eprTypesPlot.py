@@ -91,7 +91,7 @@ def main():
         a.set_yticklabels([])
     # a0.set_ylabel("Energy")
     # a0.set_xticklabels([])
-    a1.set_ylabel("Signal")
+    # a1.set_ylabel("Signal")
     # a0.set_xlabel("$B_0$")
     sep = 4
 
@@ -114,6 +114,7 @@ def main():
     a1.set_xticks([0, sweepfield[pos]])
     a1.set_xticklabels([0, r"$B_{res}$"])
     a1.set_xlim()
+    a1.set_xlabel('Field')
     a1.set_ylim(top=1.5)
     # a0.set_xticks([0, sweepfield[pos]])
     # a0.set_xticklabels([0, r"$B_{res}$"])
@@ -145,7 +146,7 @@ def main():
     a2.plot(time, [0] * len(time), c='k', zorder=3)
     a2.set_ylim(top=2)
     # a2.set_xlabel(r'Time ($\mu$s)')
-    a2.set_ylabel(r'Signal')
+    # a2.set_ylabel(r'Signal')
     a2.text(0.05, 0.7, 'b)', transform=a2.transAxes)
     # a2.set_xticklabels([])
     ### pulsed EPR ###
@@ -158,11 +159,12 @@ def main():
             np.max(rapid.y[0]), label='$B_{mod}$', c='k', alpha=0.5, ls='--')
     a3.plot(RStimes * 1e6, rapid.y[0], label='$M_x$')
     a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
-    a3.set_ylabel('Signal')
-    a3.set_xlabel('Times ($\mu$s)')
+    # a3.set_ylabel('Signal')
+    a3.set_xlabel('Time ($\mu$s)')
     a3.set_ylim(top=.5)
     a3.text(0.05, 0.7, 'c)', transform=a3.transAxes)
     ### rapidscan EPR ###
+    fig.supylabel('Amplitude (arb. u)', x=0.06)
 
     # reordering the labels
     # handles, labels = a0.get_legend_handles_labels()
@@ -178,7 +180,7 @@ def main():
     a3.legend(
         loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
-    plt.savefig('/Volumes/GoogleDrive/Shared drives/UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
+    plt.savefig('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/Shared drives/UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
 
 
 if __name__ == "__main__":
