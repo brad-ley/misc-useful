@@ -76,11 +76,14 @@ def main():
         else:
             sd[i] += np.dot(retd, normalize(down))
     fig, ax = plt.subplots(ncols=1, nrows=3, figsize=(
-        6, 4), gridspec_kw={'height_ratios': [1, 1, 1], 'hspace': 0.3})
+        # 6, 4), gridspec_kw={'height_ratios': [1, 1, 1]})
+        6, 4), gridspec_kw={'height_ratios': [1, 1, 1]}, layout='constrained')
+
     # a0 = ax[0]
     a1 = ax[0]
     a2 = ax[1]
     a3 = ax[2]
+    a2.sharex(a3)
 
     # a0.sharex(a1)
     # a2.sharex(a3)
@@ -107,14 +110,15 @@ def main():
     a1.plot(sweepfield[:-1], np.diff(absorption) /
             np.max(np.diff(absorption) * 2), label=r"$\frac{d\chi''}{dB}$")
     a1.plot(stime - 0.25, sin + 0.25, c='k', alpha=0.5)
-    a1.annotate('$\Delta I_{mod}$', (1.45, 0.75), alpha=0.5)
+    a1.annotate('$\Delta V_{mod}$', (1.45, 0.75), alpha=0.5)
     a1.plot(2.25 + sin, stime - np.min(stime), c='k')
     a1.annotate('$\Delta B_{mod}$', (1.35, 0.225))
     a1.text(0.05, 0.7, 'a)', transform=a1.transAxes)
     a1.set_xticks([0, sweepfield[pos]])
-    a1.set_xticklabels([0, r"$B_{res}$"])
+    a1.set_xticklabels(["$B_0$", r"$B_{res}$"])
+    # a1.set_xticklabels([])
     a1.set_xlim()
-    a1.set_xlabel('Field')
+    a1.set_xlabel('Magnetic field ($B_{ext}$)')
     a1.set_ylim(top=1.5)
     # a0.set_xticks([0, sweepfield[pos]])
     # a0.set_xticklabels([0, r"$B_{res}$"])
@@ -148,7 +152,7 @@ def main():
     # a2.set_xlabel(r'Time ($\mu$s)')
     # a2.set_ylabel(r'Signal')
     a2.text(0.05, 0.7, 'b)', transform=a2.transAxes)
-    # a2.set_xticklabels([])
+    a2.set_xticklabels([])
     ### pulsed EPR ###
 
     ### rapidscan EPR ###
@@ -157,14 +161,14 @@ def main():
     t, rapid, w = Bloch(1e-6, 300e-9, 0, f, 25, t=RStimes)
     a3.plot(RStimes * 1e6, w / np.max(w) *
             np.max(rapid.y[0]), label='$B_{mod}$', c='k', alpha=0.5, ls='--')
-    a3.plot(RStimes * 1e6, rapid.y[0], label='$M_x$')
-    a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
+    a3.plot(RStimes * 1e6, np.real(rapid.y[0] + 1j*rapid.y[1]), label='$M_\perp$')
+    # a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
     # a3.set_ylabel('Signal')
     a3.set_xlabel('Time ($\mu$s)')
     a3.set_ylim(top=.5)
     a3.text(0.05, 0.7, 'c)', transform=a3.transAxes)
     ### rapidscan EPR ###
-    fig.supylabel('Amplitude (arb. u)', x=0.06)
+    fig.supylabel('Amplitude (arb. u)')
 
     # reordering the labels
     # handles, labels = a0.get_legend_handles_labels()
@@ -180,7 +184,7 @@ def main():
     a3.legend(
         loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
-    plt.savefig('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/Shared drives/UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
+    plt.savefig('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/Shared drives/Brad-Tonda UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
 
 
 if __name__ == "__main__":
