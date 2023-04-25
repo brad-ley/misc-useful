@@ -36,19 +36,21 @@ def main(filename, ax):
         data['phase'] = np.angle(raw)
     data['time'] *= 1e6
     trig = np.where(data['mag'] > np.max(data['mag']) * 0.5)[0][0]
-    data['time'] -= data['time'][trig]
+    data['time'] -= data['time'][trig] - 1
+    # data['mag'] /= data['mag'][trig]
     ax.plot(data['time'], data['mag'], label=filename.stem.replace('-',' '))
     return ax
 
 
 if __name__ == "__main__":
     fig, ax = plt.subplots(layout='constrained', figsize=(8,6))
-    folder = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/4/3/Silicon532' 
+    folder = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/4/12/20230412/front surface expand' 
     for _, f in enumerate(sorted([ii for ii in P(folder).iterdir() if ii.name.endswith('.csv')])):
         ax = main(f, ax)
     ax.set_xlabel('Time ($\mu$s)')
     ax.set_ylabel('Reflectivity')
-    ax.set_xlim([-5, 35])
+    ax.set_xlim([140, 210])
+    # ax.set_xlim([-10, 60])
     ax.legend()
     fig.savefig(P(folder).joinpath('plot_relaxations.png'), dpi=500)
     plt.show()
