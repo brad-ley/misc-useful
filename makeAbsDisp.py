@@ -45,6 +45,8 @@ def make(targ='./',
         if ii.name.endswith(file_suffix) and not ii.name.startswith(".") and not 'pulsing' in ii.name
     ]
 
+    print(files)
+
     file_length = {}
 
     for file in files:
@@ -70,7 +72,7 @@ def make(targ='./',
             longest_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
             # longest_data[:, 1] += field
             middle_B = longest_data[np.argmax(
-                rolling_average(longest_data[:, 2], len(longest_data[:, 1])//rollmid)), 1]
+                rolling_average(longest_data[:, 2], len(longest_data[:, 1]) // rollmid)), 1]
             # middle_B = longest_data[np.argmax(longest_data[:, 2]), 1]
 
         curr_data = np.loadtxt(file, skiprows=data_start, delimiter=',')
@@ -97,7 +99,7 @@ def make(targ='./',
             ii[1] for ii in sorted(
                 middle_averages.items(), key=lambda x: x[1], reverse=True)
         ]
-    
+
         for key in middle_averages:
             if middle_averages[key] == sorted_average[0]:
                 disp_idx = key
@@ -133,7 +135,7 @@ def make(targ='./',
 
         # curr_B = curr_data[np.argmax(curr_data[:, 2]), 1]
         curr_B = curr_data[np.argmax(
-            rolling_average(curr_data[:, 2], len(curr_data)//rollmid)), 1]
+            rolling_average(curr_data[:, 2], len(curr_data) // rollmid)), 1]
 
         if center:
             diff_B = curr_B - middle_B

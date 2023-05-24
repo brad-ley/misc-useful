@@ -44,6 +44,7 @@ def f(r):
 
 def ang(phi):
     return (3 * np.cos(phi)**2 - 1) * np.sin(phi)
+    # return (3 * np.cos(phi)**2 - 1)
 
 
 def gaussian(x, mu, wid):
@@ -195,8 +196,8 @@ def coupling_plot(ax=None):
 if __name__ == "__main__":
     ani = makegif(
         '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/couplings.txt',
-        runcalc=False,
-        ani=False)
+        runcalc=True,
+        ani=True)
     try:
         ani.save('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/pake_in_time.gif',
                  writer='imagemagick', fps=30)

@@ -157,6 +157,7 @@ def overlay(targ, low=-1, high=-1):
             # a.spines['right'].set_visible(False)
             # a.spines['top'].set_visible(False)
             a.legend(markerfirst=True,handlelength=0.85,handletextpad=0.25,labelspacing=0.2)
+            # a.set_xlim([8.5825, 8.584])
 
         plt.tight_layout()
         fig.savefig(P(targ).joinpath('figure_comp.png'), dpi=300, transparent=True)
@@ -172,6 +173,6 @@ def main():
 
 
 if __name__ == "__main__":
-    targ = '/Volumes/GoogleDrive/My Drive/Research/Data/2022/12/16/spytag for Shiny/compare'
+    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/5/5'
     main()
     plt.show()

@@ -17,17 +17,26 @@ from simulateRapidscan import Bloch
 plt.style.use(['science'])
 # rc('text.latex', preamble=r'\usepackage{cmbright}')
 # plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['font.size'] = 14
-plt.rcParams['axes.linewidth'] = 1
-plt.rcParams['xtick.major.size'] = 5
-plt.rcParams['xtick.major.width'] = 1
-plt.rcParams['xtick.minor.size'] = 2
+# plt.rcParams['font.size'] = 14
+plt.rcParams['font.size'] = 20
+# plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['axes.linewidth'] = 1.5
+# plt.rcParams['xtick.major.size'] = 5
+plt.rcParams['xtick.major.size'] = 6
+# plt.rcParams['xtick.major.width'] = 1
+plt.rcParams['xtick.major.width'] = 1.5
+# plt.rcParams['xtick.minor.size'] = 2
+plt.rcParams['xtick.minor.size'] = 3
 plt.rcParams['xtick.minor.width'] = 1
-plt.rcParams['ytick.major.size'] = 5
-plt.rcParams['ytick.major.width'] = 1
-plt.rcParams['ytick.minor.size'] = 2
+# plt.rcParams['ytick.major.size'] = 5
+plt.rcParams['ytick.major.size'] = 6
+# plt.rcParams['ytick.major.width'] = 1
+plt.rcParams['ytick.major.width'] = 1.5
+# plt.rcParams['ytick.minor.size'] = 2
+plt.rcParams['ytick.minor.size'] = 3
 plt.rcParams['ytick.minor.width'] = 1
-plt.rcParams['lines.linewidth'] = 2
+# plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['lines.linewidth'] = 3
 
 
 def main():
@@ -109,17 +118,17 @@ def main():
     a1.plot(sweepfield, absorption / np.max(absorption), label=r"$\chi''$")
     a1.plot(sweepfield[:-1], np.diff(absorption) /
             np.max(np.diff(absorption) * 2), label=r"$\frac{d\chi''}{dB}$")
-    a1.plot(stime - 0.25, sin + 0.25, c='k', alpha=0.5)
-    a1.annotate('$\Delta V_{mod}$', (1.45, 0.75), alpha=0.5)
+    a1.plot(stime - 0.25, sin + 0.3, c='k', alpha=0.5)
+    a1.annotate('$\Delta V_{mod}$', (1.3, 0.8), alpha=0.5)
     a1.plot(2.25 + sin, stime - np.min(stime), c='k')
-    a1.annotate('$\Delta B_{mod}$', (1.35, 0.225))
-    a1.text(0.05, 0.7, 'a)', transform=a1.transAxes)
+    a1.annotate('$\Delta B_{mod}$', (1.2, 0.2))
+    a1.text(0.05, 0.7, 'A)', transform=a1.transAxes)
     a1.set_xticks([0, sweepfield[pos]])
     a1.set_xticklabels(["$B_0$", r"$B_{res}$"])
     # a1.set_xticklabels([])
     a1.set_xlim()
     a1.set_xlabel('Magnetic field ($B_{ext}$)')
-    a1.set_ylim(top=1.5)
+    a1.set_ylim(top=1.75)
     # a0.set_xticks([0, sweepfield[pos]])
     # a0.set_xticklabels([0, r"$B_{res}$"])
     c = 'k'
@@ -148,10 +157,10 @@ def main():
     a2.fill_between(time, pulses, label='Pulses', zorder=3)
     a2.fill_between(time, signal, label='Signal', zorder=3)
     a2.plot(time, [0] * len(time), c='k', zorder=3)
-    a2.set_ylim(top=2)
+    a2.set_ylim(top=2.25)
     # a2.set_xlabel(r'Time ($\mu$s)')
     # a2.set_ylabel(r'Signal')
-    a2.text(0.05, 0.7, 'b)', transform=a2.transAxes)
+    a2.text(0.05, 0.7, 'B)', transform=a2.transAxes)
     a2.set_xticklabels([])
     ### pulsed EPR ###
 
@@ -165,10 +174,10 @@ def main():
     # a3.plot(RStimes * 1e6, rapid.y[1], label='$M_y$')
     # a3.set_ylabel('Signal')
     a3.set_xlabel('Time ($\mu$s)')
-    a3.set_ylim(top=.5)
-    a3.text(0.05, 0.7, 'c)', transform=a3.transAxes)
+    a3.set_ylim(top=0.6)
+    a3.text(0.05, 0.7, 'C)', transform=a3.transAxes)
     ### rapidscan EPR ###
-    fig.supylabel('Amplitude (arb. u)')
+    fig.supylabel('Amplitude (arb. u)', fontsize=20)
 
     # reordering the labels
     # handles, labels = a0.get_legend_handles_labels()

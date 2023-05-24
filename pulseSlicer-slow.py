@@ -29,10 +29,12 @@ plt.rcParams['lines.linewidth'] = 2
 
 def main(folder):
     files = [ii for ii in P(folder).iterdir() if ii.name.endswith('.dat')]
+
     fig, ax = plt.subplots(figsize=(8, 6), layout='constrained')
 
     files.sort(key=lambda x: int(''.join(x.stem.replace(
         '-', ' ').split('_')[:-1]).split(' ')[-1].replace('ns', '')))
+    files.reverse()
 
     for i, f in enumerate(files):
         lines = f.read_text()
@@ -46,14 +48,14 @@ def main(folder):
         y = data[data.columns[-1]]
         time = np.linspace(0, len(y) * t_step, len(y))
 
-        # time -= time[np.argmin(np.abs(np.abs(y) - np.max(np.abs(y))))]
+        time -= time[np.where(np.abs(np.abs(y) > 0.5*np.max(np.abs(y))))[0][0]]
         time *= 1e6
 
         label = ''.join(f.stem.replace('-', ' ').split('_')[:-1])
         # ax.plot(time, y/np.max(y)+i, label=label)
         ax.plot(time, y, label=label)
-    # ax.set_xlim([-0.25, 0.75])
-    # ax.set_xlim([-0.5, 8])
+    ax.set_xlim([-0.1, 0.5])
+    ax.set_ylim([-5e-4, 1.25e-3])
     ax.set_xlabel('Time ($\mu$s)')
     ax.set_ylabel('Amplitude (V)')
     ax.legend()
@@ -61,7 +63,7 @@ def main(folder):
 
 
 if __name__ == "__main__":
-    folder = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/4/25/negative/both-on'
+    folder = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/4/25/positive/both-on'
     # folder = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2023/4/25/negative/'
     main(folder)
-    # plt.show()
+    plt.show()
