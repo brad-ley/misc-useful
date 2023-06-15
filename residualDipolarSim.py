@@ -57,11 +57,11 @@ def exp(x, a, c, x0):
     return a + c * np.exp(-x / x0)
 
 
-n = int(1e4)
-t_step = 0.5e-9  # start with 1 ns
+n = int(5e2)
+t_step = 0.5e-9
 t_corr = 19e-9  # start with t_corr measured from experiment Shiny did
 lw = 12.6e6  # linewidth of 0.45 mT -> 12 MHz
-t_total = 10 / lw
+t_total = 20 / lw
 time = np.arange(0, t_total, step=t_step)
 
 
@@ -134,13 +134,14 @@ def main():
         #     f(pos[0]) * ang(pos[2]) for pos in positions
         # ]
 
-        dd_ang = np.random.normal(t_step / t_corr / 10, t_step / t_corr / 4 /
-                                  10, n) * np.sign(np.random.rand(n) - 0.5)
+        dd_ang = 1 / 100 * \
+            np.random.normal(t_step / t_corr, t_step / t_corr / 4,
+                             n) * np.sign(np.random.rand(n) - 0.5)
         k = [
-            ii +
+            ii + t_step / t_corr *
             np.array([np.random.rand(),
                       np.random.rand(),
-                      np.random.rand()]) / 10 for ii in k
+                      np.random.rand()]) for ii in k
         ]  # add slight variation to k
         k = [ii / np.linalg.norm(ii) for ii in k]
 
@@ -169,31 +170,39 @@ def makegif(filename, runcalc=False, ani=True):
         main()
     couplings_time = np.loadtxt(filename)
 
-    fig3, ax3 = plt.subplots(figsize=(8, 6))
+    # fig3, ax3 = plt.subplots(figsize=(8, 6))
+    fig3, ax3 = plt.subplots()
     # ax3[0].hist(couplings_time[:, 0]/1e6, bins=bins, label=f"{time[1]*1e9:.2f} ns")
     # t_ind = np.where(time >= t_corr)[0][0]
     # ax3[1].hist(np.mean(couplings_time[:, :t_ind], axis=1)/1e6, bins=bins, label=f"{t_corr:.2f} ns")
     # ax3[2].hist(np.mean(couplings_time[:, :], axis=1)/1e6, bins=bins, label=f"{time[-1]*1e9:.2f} ns")
     bins = np.linspace(-1 / 2 * np.max(np.abs(couplings_time[0, :] / 1e6)),
                        np.max(1 / 2 * np.abs(couplings_time[0, :] / 1e6)), 250)
+    couplings_avg = [
+        np.mean(couplings_time[:idx + 1, :], axis=0) / 1e6
+        for idx, ii in enumerate(couplings_time)
+    ]
 
     def plot(frame):
         ax3.clear()
-        ax3.hist(np.mean(couplings_time[:frame + 1, :], axis=0) / 1e6,
-                 bins=bins)
-        ax3.text(0.85,
-                 0.9,
+        ax3.text(0.7,
+                 0.85,
                  f"{time[frame]*1e9:.1f} ns",
                  transform=ax3.transAxes)
         ax3.set_xlabel('Coupling (MHz)')
         ax3.set_ylabel('Intensity (arb. u)')
+        ax3.hist(couplings_avg[frame], bins=bins)
 
     if ani:
-        ani = animation.FuncAnimation(fig=fig3,
-                                      func=plot,
-                                      frames=len(time),
-                                      interval=2.5,
-                                      repeat=False)
+        ani = animation.FuncAnimation(
+            fig=fig3,
+            func=plot,
+            frames=range(0, len(time),
+                         int(len(time) / 100)),
+            interval=100,
+            repeat=True,
+            repeat_delay=1000,
+        )
     else:
         ani = None
 
@@ -213,10 +222,12 @@ def makegif(filename, runcalc=False, ani=True):
     # ax.plot(time * 1e9, couplings_time[:, 0] / 1e6, label='raw coupling')
     popt, pcov = curve_fit(exp, time * 1e9, com)
 
-    ax.plot(time * 1e9, com, label='RMS value')
+    ax.plot(time * 1e9, com, label='RMS value', c='k')
     ax.plot(time * 1e9,
             exp(time * 1e9, *popt),
-            label=rf'Fit: $\tau={popt[-1]:.1f}\,$ns')
+            label=rf'Fit: $\tau={popt[-1]:.1f}\,$ns',
+            ls='--',
+            c='r')
 
     T2 = 7e-9
     ax.axvline(T2 * 1e9,
@@ -262,12 +273,16 @@ if __name__ == "__main__":
     ani = makegif(
         '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/couplings.txt',
         runcalc=True,
+        # runcalc=False,
         ani=True)
+    # ani=False)
+    print('Done calculation! Saving animation.')
     try:
         ani.save(
-            '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/pake_in_time.gif',
-            writer='imagemagick',
-            fps=30)
+            '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/pake_in_time.mp4',
+            dpi=300,
+            progress_callback=lambda i, n: print(f'Saving frame {i}/{n}',
+                                                 end='\r'))
     except AttributeError:
         pass
     # plt.show()
