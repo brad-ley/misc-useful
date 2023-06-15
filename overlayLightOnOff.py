@@ -41,11 +41,11 @@ def main(targ="./", makeAbs=True, keyw='Light', field=0):
             file_suffix='rephased.dat',
             numerical_keyw=False,
             field=field,
-            center=False,
+            center=True,
             center_sect=10
         )
     # compare(targ=targ, keyword=keyw, field=field, B_0=-1)
-    compare(targ=targ, keyword=keyw, field=field, B_0=-1, normalize=False,)
+    compare(targ=targ, keyword=keyw, field=field, B_0=-1, normalize=True,)
 
 
 def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False, B_0=-1):
@@ -174,7 +174,7 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
                    alpha=0.5, lw=lw, label=r'$B_0$')
     # T406C, E537C are mutations
     T = 294
-    mutant = 'DL T406C-E537C'
+    mutant = ''
     # ax.legend(loc=(.55,.8),markerfirst=True,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
     ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
     ax.text(0.05, 0.11, f'$T={T}$ K\n{mutant}',
@@ -199,7 +199,7 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
 
 if __name__ == "__main__":
-    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2022/1/20'
-    main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
+    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2022/1/light on DL vs SL'
+    main(targ=targ, makeAbs=True, keyw='sweep', field=8.62)
     # main(targ=targ, makeAbs=True, keyw='sweep', field=8.62)
     plt.show()
