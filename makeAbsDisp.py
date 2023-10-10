@@ -45,8 +45,6 @@ def make(targ='./',
         if ii.name.endswith(file_suffix) and not ii.name.startswith(".") and not 'pulsing' in ii.name
     ]
 
-    print(files)
-
     file_length = {}
 
     for file in files:

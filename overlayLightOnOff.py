@@ -6,16 +6,18 @@ from pathlib import PurePath as PP
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
+from matplotlib import rc
 from scipy.integrate import cumtrapz, trapz
+from scipy.optimize import curve_fit
 
 # from baselineSubtract import subtract
 from makeAbsDisp import make
 from readDataFile import read
 
-from matplotlib import rc
 plt.style.use(['science'])
-rc('text.latex', preamble=r'\usepackage{cmbright}')
-plt.rcParams['font.family'] = 'sans-serif'
+# rc('text.latex', preamble=r'\usepackage{cmbright}')
+# plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.size'] = 14
 plt.rcParams['axes.linewidth'] = 1
 plt.rcParams['xtick.major.size'] = 5
@@ -28,6 +30,10 @@ plt.rcParams['ytick.minor.size'] = 2
 plt.rcParams['ytick.minor.width'] = 1
 
 
+def Dlorentzian(x, A, x0, w):
+    return - A * (x - x0) / ((x - x0)**2 + (1 / 2 * w)**2)**2
+
+
 def main(targ="./", makeAbs=True, keyw='Light', field=0):
     if P(targ).is_file():
         targ = str(P(targ).parent)
@@ -35,20 +41,29 @@ def main(targ="./", makeAbs=True, keyw='Light', field=0):
     # field = 8.62
 
     if makeAbs:
-        make(
-            targ=targ,
-            keyw=keyw,
-            file_suffix='rephased.dat',
-            numerical_keyw=False,
-            field=field,
-            center=True,
-            center_sect=10
-        )
+        make(targ=targ,
+             keyw=keyw,
+             file_suffix='rephased.dat',
+             numerical_keyw=False,
+             field=field,
+             center=True,
+             center_sect=10)
     # compare(targ=targ, keyword=keyw, field=field, B_0=-1)
-    compare(targ=targ, keyword=keyw, field=field, B_0=-1, normalize=True,)
+    compare(
+        targ=targ,
+        keyword=keyw,
+        field=field,
+        B_0=7e-3,
+        normalize=False,
+    )
 
 
-def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False, B_0=-1):
+def compare(targ='./',
+            keyword='Light',
+            field=0,
+            normalize=False,
+            integral=False,
+            B_0=-1):
     keyword = keyword.lower()
 
     if P(targ).is_file():
@@ -56,11 +71,11 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
 
     filelist = [
         ii for ii in P(targ).iterdir()
-
-        if (ii.name.startswith('dispersion') or ii.name.startswith('absorption')) and ii.name.endswith('_exp.txt')
+        if (ii.name.startswith('dispersion') or ii.name.startswith(
+            'absorption')) and ii.name.endswith('_exp.txt')
     ]
     filelist.sort()
-    # filelist.reverse()
+    filelist.reverse()
 
     disp_add = False
     abs_add = False
@@ -68,16 +83,20 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
     # fig, ax = plt.subplots(figsize=(8,6))
     fig, ax = plt.subplots()
 
+
+    lw = 2
     scale = 0
     lines = {}
     outlist = []
-    
+
     for i, f in enumerate(filelist):
         legend = ' '.join([
             ii.lower() for ii in P(f).stem.split('_') if
             ('absorption' in ii or 'dispersion' in ii or keyword in ii.lower())
-        ]).replace('light', 'Laser ').replace(keyword, '').replace('absorption', r"$\frac{d\chi''}{dB}$"
-                                                                   ).replace('dispersion', r"$\frac{d\chi'}{dB}$")
+        ]).replace('light', 'Laser ').replace(keyword, '').replace(
+            'absorption',
+            r"$\frac{d\chi''}{dB}$").replace('dispersion',
+                                             r"$\frac{d\chi'}{dB}$")
         header, data = read(f)
 
         # legend = legend[:-len('Sweep')]
@@ -93,8 +112,6 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
             pc = '#00A7CA'
             sty = '--'
             # sty = '-'
-
-        lw = 2
 
         if integral:
             d = cumtrapz(data[:, 1], x=data[:, 0])
@@ -131,8 +148,8 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
                 """
                 For normalizing to max
                 """
-                data[:, 1] -= trapz(data[:, 1], x=data[:, 0])
-                data[:, 1] /= np.max(data[:, 1])
+                # data[:, 1] -= trapz(data[:, 1], x=data[:, 0])
+                # data[:, 1] /= np.max(data[:, 1])
 
             if r"chi''" in legend:
                 legend = " ".join(legend.split(" ")[1:])
@@ -161,24 +178,52 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
                 # ax.plot(data[:, 0], data[:, 1], label=legend)
 
     outlist.reverse()
+
     for i, f in enumerate(outlist):
         try:
-            ax.plot(lines[f + ' data'][0], lines[f + ' data'][1] / scale, label=lines[f +
-                                                                                          ' name'], c=lines[f + ' color'], linestyle=lines[f + ' style'], lw=lw)
+            ax.plot(lines[f + ' data'][0],
+                    lines[f + ' data'][1] / scale,
+                    label=lines[f + ' name'],
+                    c=lines[f + ' color'],
+                    linestyle=lines[f + ' style'],
+                    lw=lw)
         except:
-            ax.plot(lines[f + ' data'][0], lines[f + ' data']
-                    [1] / scale, label="".join([ii.strip('sweep') for ii in f.split("_") if ii != 'absorption' and ii != 'exp']), lw=lw)
+            label = "".join([
+                        ii.strip('sweep') for ii in f.split("_")
+                        if ii != 'absorption' and ii != 'exp'
+                    ])
+            line, = ax.plot(lines[f + ' data'][0],
+                    lines[f + ' data'][1] / scale,
+                    label=label,
+                    lw=lw)
+            popt, pcov = curve_fit(Dlorentzian, lines[f + ' data'][0],
+                                   lines[f + ' data'][1] / scale, p0=[1, np.mean(lines[f + ' data'][0]), 1e-3])
+            print(f'lw is {popt[-1]*1e4:.2f} G')
+            ax.plot(lines[f + ' data'][0], Dlorentzian(lines[f + ' data'][0], *popt), c=line.get_color(), ls='--')
+            # ax.plot(lines[f + ' data'][0],
+            #         Dlorentzian(lines[f + ' data'][0], *popt),
+            #         label=rf"$\Gamma={popt[-1]*1e4:.1f}$ G", lw=lw, ls='--', c=line[0].get_color())
+
 
     if B_0 != -1:
-        ax.axvline(x=field + B_0, c='gray',
-                   alpha=0.5, lw=lw, label=r'$B_0$')
+        ax.axvline(x=field + B_0, c='gray', alpha=0.5, lw=lw, label=r'$B_0$')
     # T406C, E537C are mutations
     T = 294
-    mutant = ''
+    mutant = 'DL T406C-E537C'
     # ax.legend(loc=(.55,.8),markerfirst=True,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
-    ax.legend(loc='upper right',markerfirst=False,handlelength=1,handletextpad=0.4,labelspacing=0.2,)
-    ax.text(0.05, 0.11, f'$T={T}$ K\n{mutant}',
-            horizontalalignment='left', verticalalignment='center', transform=ax.transAxes)
+    ax.legend(
+        loc='upper right',
+        markerfirst=False,
+        handlelength=1,
+        handletextpad=0.4,
+        labelspacing=0.2,
+    )
+    ax.text(0.05,
+            0.11,
+            f'$T={T}$ K\n{mutant}',
+            horizontalalignment='left',
+            verticalalignment='center',
+            transform=ax.transAxes)
     title = 'Light-activated spectral narrowing'
     # title = 'Dipolar broadening at 87 K'
 
@@ -188,18 +233,22 @@ def compare(targ='./', keyword='Light', field=0, normalize=False, integral=False
     ax.set_xlabel('Field (T)')
     ax.set_ylabel('cwEPR signal (arb. u)')
     ax.set_yticks([-1, 0, 1])
-    ax.set_ylim([-1.1, 1.1])
+    ax.annotate('a)', (8.62242, 0.78), verticalalignment='bottom') ## need to annotate
+    # ax.set_ylim([-1.2, 1.2])
+    # ax.set_xlim(right=8.631)
     # ax.set_yticklabels([])
     # ax.set_xticks([8.620,8.622, 8.624, 8.626, 8.628])
     # ax.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
     # ax.spines['right'].set_visible(False)
     # ax.spines['top'].set_visible(False)
-    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'), transparent=True, dpi=500)
+    fig.savefig(P(targ).joinpath('compared' + int_add + '.png'),
+                transparent=False,
+                dpi=1200)
     # fig.savefig(P(targ).joinpath('compared' + int_add + '.tif'), dpi=300)
 
 
 if __name__ == "__main__":
-    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2022/1/light on DL vs SL'
-    main(targ=targ, makeAbs=True, keyw='sweep', field=8.62)
+    targ = '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Data/2022/1/20'
+    main(targ=targ, makeAbs=True, keyw='Light', field=8.62)
     # main(targ=targ, makeAbs=True, keyw='sweep', field=8.62)
     plt.show()

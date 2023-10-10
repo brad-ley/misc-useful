@@ -177,7 +177,7 @@ def main():
     a3.set_ylim(top=0.6)
     a3.text(0.05, 0.7, 'C)', transform=a3.transAxes)
     ### rapidscan EPR ###
-    fig.supylabel('Amplitude (arb. u)', fontsize=20)
+    fig.supylabel('Amplitude (arb. u.)', fontsize=20)
 
     # reordering the labels
     # handles, labels = a0.get_legend_handles_labels()
@@ -193,7 +193,7 @@ def main():
     a3.legend(
         loc='upper right', handlelength=1, handletextpad=0.4, labelspacing=0.0, ncol=3
     )
-    plt.savefig('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/Shared drives/Brad-Tonda UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=600)
+    plt.savefig('/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/Shared drives/Brad-Tonda UCSB/2022-Quasi-optical Sample Holder Solution for sub-THz Electron Spin Resonance Spectrometers/Figures/EPRtechniques.png', dpi=1200)
 
 
 if __name__ == "__main__":

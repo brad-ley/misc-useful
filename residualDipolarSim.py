@@ -57,11 +57,15 @@ def exp(x, a, c, x0):
     return a + c * np.exp(-x / x0)
 
 
-n = int(5e2)
+def strexp(x, a, c, x0, d):
+    return a + c * np.exp(-(x / x0)**d)
+
+
+n = int(5e3)
 t_step = 0.5e-9
 t_corr = 19e-9  # start with t_corr measured from experiment Shiny did
 lw = 12.6e6  # linewidth of 0.45 mT -> 12 MHz
-t_total = 20 / lw
+t_total = 16 / lw
 time = np.arange(0, t_total, step=t_step)
 
 
@@ -116,7 +120,7 @@ def main():
 
         return np.identity(3) + np.sin(theta) * K + (
             1 - np.cos(theta)) * np.linalg.matrix_power(K, 2)
-
+    
     def update(frame):
         nonlocal positions, couplings_time, cartesian_positions, k
 
@@ -134,14 +138,13 @@ def main():
         #     f(pos[0]) * ang(pos[2]) for pos in positions
         # ]
 
-        dd_ang = 1 / 100 * \
-            np.random.normal(t_step / t_corr, t_step / t_corr / 4,
+        # dd_ang = 1 / 100 * \
+        dd_ang = 1 / 1 * \
+            np.random.normal(t_step / t_corr, t_step / t_corr,
                              n) * np.sign(np.random.rand(n) - 0.5)
         k = [
-            ii + t_step / t_corr *
-            np.array([np.random.rand(),
-                      np.random.rand(),
-                      np.random.rand()]) for ii in k
+            ii + t_step / t_corr * 
+            np.random.rand(3) for ii in k
         ]  # add slight variation to k
         k = [ii / np.linalg.norm(ii) for ii in k]
 
@@ -168,10 +171,14 @@ def main():
 def makegif(filename, runcalc=False, ani=True):
     if runcalc:
         main()
+    else:
+        if not P(filename).is_file():
+            main()
+
     couplings_time = np.loadtxt(filename)
 
     # fig3, ax3 = plt.subplots(figsize=(8, 6))
-    fig3, ax3 = plt.subplots()
+    fig3, ax3 = plt.subplots(layout='constrained')
     # ax3[0].hist(couplings_time[:, 0]/1e6, bins=bins, label=f"{time[1]*1e9:.2f} ns")
     # t_ind = np.where(time >= t_corr)[0][0]
     # ax3[1].hist(np.mean(couplings_time[:, :t_ind], axis=1)/1e6, bins=bins, label=f"{t_corr:.2f} ns")
@@ -198,7 +205,7 @@ def makegif(filename, runcalc=False, ani=True):
             fig=fig3,
             func=plot,
             frames=range(0, len(time),
-                         int(len(time) / 100)),
+                         int(len(time) / 250)),
             interval=100,
             repeat=True,
             repeat_delay=1000,
@@ -206,8 +213,8 @@ def makegif(filename, runcalc=False, ani=True):
     else:
         ani = None
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots(figsize=(8, 6), layout='constrained')
+    fig, ax = plt.subplots(layout='constrained')
     com = np.zeros(len(time))
     c1 = np.zeros(len(time))
 
@@ -265,8 +272,8 @@ def coupling_plot(ax=None):
     ax.set_xlabel('r (nm)')
     plt.savefig(P(
         '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/'
-    ).joinpath('coupling_strength.png'),
-                dpi=400)
+    ).joinpath('coupling_strength.png'),)
+                # dpi=400)
 
 
 if __name__ == "__main__":
@@ -276,7 +283,7 @@ if __name__ == "__main__":
         # runcalc=False,
         ani=True)
     # ani=False)
-    print('Done calculation! Saving animation.')
+
     try:
         ani.save(
             '/Users/Brad/Library/CloudStorage/GoogleDrive-bdprice@ucsb.edu/My Drive/Research/Code/dipolar averaging/pake_in_time.mp4',
